@@ -1,4 +1,5 @@
 import express from 'express';
+import fetch from 'node-fetch';
 import { checkSinglePage, crawlSite } from '../services/checker.js';
 import { validateUrl } from '../utils/validation.js';
 
@@ -56,6 +57,64 @@ router.post('/crawl', async (req, res) => {
     console.error('Crawl API Error:', error);
     res.status(500).json({ 
       error: 'Crawling failed',
+      message: error.message 
+    });
+  }
+});
+
+/**
+ * 画像プロキシAPI
+ * GET /api/proxy-image?url=<image_url>
+ */
+router.get('/proxy-image', async (req, res) => {
+  try {
+    const { url } = req.query;
+    
+    if (!url) {
+      return res.status(400).json({ error: 'URL parameter is required' });
+    }
+
+    // URLバリデーション
+    try {
+      new URL(url);
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid URL' });
+    }
+
+    // 画像を取得
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; Web-Site-Checker/2.0)',
+      },
+      timeout: 10000,
+    });
+
+    if (!response.ok) {
+      return res.status(response.status).json({ 
+        error: `Failed to fetch image: ${response.statusText}` 
+      });
+    }
+
+    // Content-Typeをチェック（画像のみ許可）
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.startsWith('image/')) {
+      return res.status(400).json({ error: 'Not an image' });
+    }
+
+    // ヘッダーを設定
+    res.set({
+      'Content-Type': contentType,
+      'Cache-Control': 'public, max-age=3600', // 1時間キャッシュ
+      'Access-Control-Allow-Origin': '*'
+    });
+
+    // 画像データをストリーミング
+    response.body.pipe(res);
+
+  } catch (error) {
+    console.error('Image proxy error:', error);
+    res.status(500).json({ 
+      error: 'Failed to proxy image',
       message: error.message 
     });
   }

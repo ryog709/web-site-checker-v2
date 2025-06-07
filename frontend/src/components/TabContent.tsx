@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { TabType, CheckResult, Issue, Heading, ImageInfo } from '../types/index.js';
 import { ExternalLink, AlertTriangle, AlertCircle, Info, Image as ImageIcon, FileText, Eye } from 'lucide-react';
 import { Modal } from './Modal.js';
+import { getProxiedImageUrl, isValidImageUrl } from '../utils/imageUtils.js';
 
 interface TabContentProps {
   activeTab: TabType;
@@ -82,14 +83,16 @@ export const TabContent: React.FC<TabContentProps> = ({
                       <div className="heading-images-horizontal">
                         {heading.images.map((img, imgIndex) => (
                           <div key={imgIndex} className="image-container-horizontal">
-                            {img.src && img.src !== 'undefined' ? (
+                            {isValidImageUrl(img.src) ? (
                               <img 
-                                src={img.src} 
+                                src={getProxiedImageUrl(img.src)} 
                                 alt={img.alt || '画像'}
                                 className="preview-image-horizontal"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none';
-                                  e.currentTarget.nextElementSibling.style.display = 'flex';
+                                  if (e.currentTarget.nextElementSibling) {
+                                    (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                                  }
                                 }}
                               />
                             ) : (
@@ -97,6 +100,9 @@ export const TabContent: React.FC<TabContentProps> = ({
                                 <ImageIcon size={24} />
                               </div>
                             )}
+                            <div className="image-fallback-horizontal" style={{ display: 'none' }}>
+                              <ImageIcon size={24} />
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -141,14 +147,16 @@ export const TabContent: React.FC<TabContentProps> = ({
           {allImages.map((image, index) => (
             <div key={index} className="image-card">
               <div className="image-preview-container">
-                {image.src && image.src !== 'undefined' ? (
+                {isValidImageUrl(image.src) ? (
                   <img 
-                    src={image.src} 
+                    src={getProxiedImageUrl(image.src)} 
                     alt={image.alt || `画像 ${image.index}`}
                     className="image-preview-full"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
-                      e.currentTarget.nextElementSibling.style.display = 'flex';
+                      if (e.currentTarget.nextElementSibling) {
+                        (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                      }
                     }}
                   />
                 ) : (
@@ -386,7 +394,7 @@ export const TabContent: React.FC<TabContentProps> = ({
       case 'images':
         return renderAllImages(issues.allImages || []);
       case 'image-issues':
-        return renderIssueTable(issues.images, '画像の問題');
+        return renderIssueTable(issues.images, '画像');
       case 'links':
         return renderIssueTable(issues.links, 'リンク');
       case 'meta':
