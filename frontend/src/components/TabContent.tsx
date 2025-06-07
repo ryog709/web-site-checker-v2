@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { TabType, CheckResult, Issue, Heading } from '../types/index.js';
-import { ExternalLink, AlertTriangle, AlertCircle, Info } from 'lucide-react';
+import { ExternalLink, AlertTriangle, AlertCircle, Info, ChevronRight, Image as ImageIcon, FileText, Eye } from 'lucide-react';
 import { Modal } from './Modal.js';
 
 interface TabContentProps {
@@ -17,6 +17,17 @@ export const TabContent: React.FC<TabContentProps> = ({
   allResults,
 }) => {
   const [selectedIssue, setSelectedIssue] = useState<any>(null);
+  const [expandedHeadings, setExpandedHeadings] = useState<Set<number>>(new Set());
+
+  const toggleHeading = (index: number) => {
+    const newExpanded = new Set(expandedHeadings);
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index);
+    } else {
+      newExpanded.add(index);
+    }
+    setExpandedHeadings(newExpanded);
+  };
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
@@ -36,27 +47,115 @@ export const TabContent: React.FC<TabContentProps> = ({
     if (headingsStructure.length === 0) {
       return (
         <div className="no-issues">
-          <p>❓ 見出しが見つかりませんでした</p>
+          <div className="empty-state">
+            <FileText size={48} className="empty-icon" />
+            <h3>見出しが見つかりませんでした</h3>
+            <p>このページには見出し要素（h1〜h6）がありません</p>
+          </div>
         </div>
       );
     }
 
     return (
-      <div className="headings-structure">
-        <h4>見出し構造 ({headingsStructure.length}個)</h4>
-        <div className="headings-tree">
+      <div className="headings-structure-modern">
+        <div className="section-header">
+          <div className="section-title">
+            <FileText size={20} />
+            <h4>見出し構造</h4>
+            <span className="count-badge">{headingsStructure.length}</span>
+          </div>
+          <p className="section-description">
+            ページの見出し階層を視覚化。SEOとアクセシビリティの向上に重要です。
+          </p>
+        </div>
+
+        <div className="headings-tree-modern">
           {headingsStructure.map((heading, index) => {
-            // レベルに応じたインデント計算（20px × (レベル - 1)）
-            const indentLevel = (heading.level - 1) * 20;
+            const isExpanded = expandedHeadings.has(index);
+            const indentLevel = (heading.level - 1) * 24;
             
             return (
               <div 
                 key={index} 
-                className={`heading-item heading-level-${heading.level}`}
-                style={{ paddingLeft: `${indentLevel}px` }}
+                className={`heading-card ${heading.hasImage ? 'has-image' : ''} ${heading.isEmpty ? 'is-empty' : ''}`}
+                style={{ marginLeft: `${indentLevel}px` }}
               >
-                <span className="heading-tag">{heading.tag}</span>
-                <span className="heading-text">{heading.text || '（空の見出し）'}</span>
+                <div 
+                  className="heading-main"
+                  onClick={() => heading.hasImage && toggleHeading(index)}
+                  style={{ cursor: heading.hasImage ? 'pointer' : 'default' }}
+                >
+                  <div className="heading-info">
+                    <span className={`heading-level-badge level-${heading.level}`}>
+                      {heading.tag}
+                    </span>
+                    <div className="heading-content">
+                      <span className="heading-text-modern">
+                        {heading.text || '（内容なし）'}
+                      </span>
+                      {heading.hasImage && (
+                        <div className="heading-meta">
+                          <ImageIcon size={14} />
+                          <span>{heading.images.length}個の画像</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {heading.hasImage && (
+                    <ChevronRight 
+                      size={16} 
+                      className={`expand-icon ${isExpanded ? 'expanded' : ''}`}
+                    />
+                  )}
+                </div>
+
+                {heading.hasImage && isExpanded && (
+                  <div className="heading-images">
+                    {heading.images.map((img, imgIndex) => (
+                      <div key={imgIndex} className="image-preview">
+                        <div className="image-container">
+                          {img.src && img.src !== 'undefined' ? (
+                            <img 
+                              src={img.src} 
+                              alt={img.alt || '画像'}
+                              className="preview-image"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.nextElementSibling.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <div className="image-fallback" style={{ display: 'none' }}>
+                            <ImageIcon size={24} />
+                            <span>画像を読み込めません</span>
+                          </div>
+                        </div>
+                        <div className="image-details">
+                          <div className="image-alt">
+                            {img.alt ? (
+                              <><strong>Alt:</strong> {img.alt}</>
+                            ) : (
+                              <span className="missing-alt">⚠️ Alt属性なし</span>
+                            )}
+                          </div>
+                          {img.title && (
+                            <div className="image-title">
+                              <strong>Title:</strong> {img.title}
+                            </div>
+                          )}
+                          {(img.width || img.height) && (
+                            <div className="image-dimensions">
+                              <strong>サイズ:</strong> {img.width || '?'} × {img.height || '?'}px
+                            </div>
+                          )}
+                          <div className="image-filename">
+                            <strong>ファイル:</strong> {img.filename || 'unknown'}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -69,50 +168,58 @@ export const TabContent: React.FC<TabContentProps> = ({
     if (issues.length === 0) {
       return (
         <div className="no-issues">
-          <p>✅ {title}に関する問題は見つかりませんでした</p>
+          <div className="success-state">
+            <div className="success-icon">✅</div>
+            <h3>問題は見つかりませんでした</h3>
+            <p>{title}に関する問題は検出されませんでした</p>
+          </div>
         </div>
       );
     }
 
     return (
-      <div className="issues-table-container">
-        <h4>{title} ({issues.length}件)</h4>
-        <table className="issues-table" role="table">
-          <thead>
-            <tr>
-              <th scope="col">重要度</th>
-              <th scope="col">問題</th>
-              <th scope="col">要素</th>
-              <th scope="col">詳細</th>
-            </tr>
-          </thead>
-          <tbody>
-            {issues.map((issue, index) => (
-              <tr key={index}>
-                <td>{getSeverityIcon(issue.severity)}</td>
-                <td>{issue.message}</td>
-                <td>
-                  <code>{issue.element}</code>
-                  {issue.src && (
-                    <div className="issue-detail">src: {issue.src}</div>
-                  )}
-                  {issue.href && (
-                    <div className="issue-detail">href: {issue.href}</div>
-                  )}
-                </td>
-                <td>
-                  <button
-                    className="detail-button"
-                    onClick={() => setSelectedIssue({ ...issue, type: title })}
-                    aria-label={`${issue.message}の詳細を表示`}
-                  >
-                    詳細
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="issues-section-modern">
+        <div className="section-header">
+          <div className="section-title">
+            <AlertTriangle size={20} />
+            <h4>{title}の問題</h4>
+            <span className="count-badge error">{issues.length}</span>
+          </div>
+        </div>
+
+        <div className="issues-grid">
+          {issues.map((issue, index) => (
+            <div key={index} className={`issue-card severity-${issue.severity}`}>
+              <div className="issue-header">
+                {getSeverityIcon(issue.severity)}
+                <span className="issue-type">{issue.type}</span>
+              </div>
+              <div className="issue-content">
+                <h5 className="issue-message">{issue.message}</h5>
+                {issue.element && (
+                  <code className="issue-element">{issue.element}</code>
+                )}
+                {issue.src && (
+                  <div className="issue-detail">
+                    <strong>ソース:</strong> {issue.src}
+                  </div>
+                )}
+                {issue.href && (
+                  <div className="issue-detail">
+                    <strong>リンク:</strong> {issue.href}
+                  </div>
+                )}
+              </div>
+              <button
+                className="detail-button-modern"
+                onClick={() => setSelectedIssue({ ...issue, type: title })}
+              >
+                <Eye size={14} />
+                詳細を見る
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
     );
   };
@@ -121,87 +228,84 @@ export const TabContent: React.FC<TabContentProps> = ({
     const { lighthouse, axe } = issues.accessibility;
 
     return (
-      <div className="accessibility-content">
+      <div className="accessibility-content-modern">
         {lighthouse.length > 0 && (
-          <div className="lighthouse-issues">
-            <h4>Lighthouse アクセシビリティ ({lighthouse.length}件)</h4>
-            <table className="issues-table">
-              <thead>
-                <tr>
-                  <th scope="col">タイトル</th>
-                  <th scope="col">スコア</th>
-                  <th scope="col">詳細</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lighthouse.map((issue, index) => (
-                  <tr key={index}>
-                    <td>{issue.title}</td>
-                    <td>
-                      <span className={`score-badge ${issue.score === 0 ? 'score-badge--fail' : 'score-badge--partial'}`}>
-                        {issue.score === 0 ? 'Fail' : 'Partial'}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        className="detail-button"
-                        onClick={() => setSelectedIssue({ ...issue, type: 'Lighthouse' })}
-                        aria-label={`${issue.title}の詳細を表示`}
-                      >
-                        詳細
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="accessibility-section">
+            <div className="section-header">
+              <div className="section-title">
+                <div className="lighthouse-icon">🏮</div>
+                <h4>Lighthouse アクセシビリティ</h4>
+                <span className="count-badge warning">{lighthouse.length}</span>
+              </div>
+            </div>
+            <div className="issues-grid">
+              {lighthouse.map((issue, index) => (
+                <div key={index} className="accessibility-card lighthouse">
+                  <div className="accessibility-header">
+                    <h5>{issue.title}</h5>
+                    <span className={`score-badge ${issue.score === 0 ? 'fail' : 'partial'}`}>
+                      {issue.score === 0 ? 'Failed' : 'Partial'}
+                    </span>
+                  </div>
+                  <p className="accessibility-description">{issue.description}</p>
+                  <button
+                    className="detail-button-modern"
+                    onClick={() => setSelectedIssue({ ...issue, type: 'Lighthouse' })}
+                  >
+                    <Eye size={14} />
+                    詳細を見る
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {axe.length > 0 && (
-          <div className="axe-issues">
-            <h4>WCAG 2.1 AA 準拠チェック ({axe.length}件)</h4>
-            <table className="issues-table">
-              <thead>
-                <tr>
-                  <th scope="col">重要度</th>
-                  <th scope="col">ルール</th>
-                  <th scope="col">影響範囲</th>
-                  <th scope="col">詳細</th>
-                </tr>
-              </thead>
-              <tbody>
-                {axe.map((violation, index) => (
-                  <tr key={index}>
-                    <td>{getSeverityIcon(violation.impact)}</td>
-                    <td>
-                      <code>{violation.id}</code>
-                      <div className="violation-tags">
-                        {violation.tags.slice(0, 3).map(tag => (
-                          <span key={tag} className="tag">{tag}</span>
-                        ))}
-                      </div>
-                    </td>
-                    <td>{violation.nodes}個の要素</td>
-                    <td>
-                      <button
-                        className="detail-button"
-                        onClick={() => setSelectedIssue({ ...violation, type: 'WCAG' })}
-                        aria-label={`${violation.help}の詳細を表示`}
-                      >
-                        詳細
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="accessibility-section">
+            <div className="section-header">
+              <div className="section-title">
+                <div className="axe-icon">🪓</div>
+                <h4>WCAG 2.1 AA準拠チェック</h4>
+                <span className="count-badge error">{axe.length}</span>
+              </div>
+            </div>
+            <div className="issues-grid">
+              {axe.map((violation, index) => (
+                <div key={index} className="accessibility-card axe">
+                  <div className="accessibility-header">
+                    <div className="violation-info">
+                      {getSeverityIcon(violation.impact)}
+                      <code className="violation-id">{violation.id}</code>
+                    </div>
+                    <span className="affected-elements">{violation.nodes}個の要素</span>
+                  </div>
+                  <h5 className="violation-help">{violation.help}</h5>
+                  <div className="violation-tags-modern">
+                    {violation.tags.slice(0, 3).map(tag => (
+                      <span key={tag} className="tag-modern">{tag}</span>
+                    ))}
+                  </div>
+                  <button
+                    className="detail-button-modern"
+                    onClick={() => setSelectedIssue({ ...violation, type: 'WCAG' })}
+                  >
+                    <Eye size={14} />
+                    詳細を見る
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {lighthouse.length === 0 && axe.length === 0 && (
           <div className="no-issues">
-            <p>✅ アクセシビリティに関する問題は見つかりませんでした</p>
+            <div className="success-state">
+              <div className="success-icon">🎉</div>
+              <h3>アクセシビリティ完璧！</h3>
+              <p>WCAG 2.1 AA準拠に関する問題は検出されませんでした</p>
+            </div>
           </div>
         )}
       </div>
@@ -212,10 +316,10 @@ export const TabContent: React.FC<TabContentProps> = ({
     switch (activeTab) {
       case 'headings':
         return (
-          <div className="headings-tab">
+          <div className="headings-tab-modern">
             {renderHeadingsStructure(issues.headingsStructure || [])}
             {issues.headings.length > 0 && (
-              <div className="headings-issues">
+              <div className="headings-issues-section">
                 {renderIssueTable(issues.headings, '見出し構造の問題')}
               </div>
             )}
@@ -246,27 +350,49 @@ export const TabContent: React.FC<TabContentProps> = ({
         onClose={() => setSelectedIssue(null)}
         title={isLighthouse ? selectedIssue.title : isWCAG ? selectedIssue.help : selectedIssue.message}
       >
-        <div className="modal-content">
+        <div className="modal-content-modern">
           {isLighthouse && (
             <>
-              <p><strong>説明:</strong> {selectedIssue.description}</p>
+              <div className="modal-section">
+                <strong>説明:</strong>
+                <p>{selectedIssue.description}</p>
+              </div>
               {selectedIssue.displayValue && (
-                <p><strong>値:</strong> {selectedIssue.displayValue}</p>
+                <div className="modal-section">
+                  <strong>値:</strong>
+                  <p>{selectedIssue.displayValue}</p>
+                </div>
               )}
-              <p><strong>スコア:</strong> {selectedIssue.score}</p>
+              <div className="modal-section">
+                <strong>スコア:</strong>
+                <span className={`score-badge ${selectedIssue.score === 0 ? 'fail' : 'partial'}`}>
+                  {selectedIssue.score}
+                </span>
+              </div>
             </>
           )}
 
           {isWCAG && (
             <>
-              <p><strong>説明:</strong> {selectedIssue.description}</p>
-              <p><strong>影響レベル:</strong> {selectedIssue.impact}</p>
-              <p><strong>影響要素数:</strong> {selectedIssue.nodes}個</p>
-              <div className="wcag-tags">
+              <div className="modal-section">
+                <strong>説明:</strong>
+                <p>{selectedIssue.description}</p>
+              </div>
+              <div className="modal-section">
+                <strong>影響レベル:</strong>
+                <span className={`impact-badge impact-${selectedIssue.impact}`}>
+                  {selectedIssue.impact}
+                </span>
+              </div>
+              <div className="modal-section">
+                <strong>影響要素数:</strong>
+                <span className="affected-count">{selectedIssue.nodes}個</span>
+              </div>
+              <div className="modal-section">
                 <strong>関連ガイドライン:</strong>
-                <div className="tags-list">
+                <div className="tags-list-modern">
                   {selectedIssue.tags.map((tag: string) => (
-                    <span key={tag} className="tag">{tag}</span>
+                    <span key={tag} className="tag-modern">{tag}</span>
                   ))}
                 </div>
               </div>
@@ -275,9 +401,10 @@ export const TabContent: React.FC<TabContentProps> = ({
                   href={selectedIssue.helpUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="external-link"
+                  className="external-link-modern"
                 >
-                  詳細情報を見る <ExternalLink size={14} />
+                  <ExternalLink size={16} />
+                  詳細情報を見る
                 </a>
               )}
             </>
@@ -285,15 +412,29 @@ export const TabContent: React.FC<TabContentProps> = ({
 
           {!isLighthouse && !isWCAG && (
             <>
-              <p><strong>重要度:</strong> {selectedIssue.severity}</p>
+              <div className="modal-section">
+                <strong>重要度:</strong>
+                <span className={`severity-badge severity-${selectedIssue.severity}`}>
+                  {selectedIssue.severity}
+                </span>
+              </div>
               {selectedIssue.element && (
-                <p><strong>要素:</strong> <code>{selectedIssue.element}</code></p>
+                <div className="modal-section">
+                  <strong>要素:</strong>
+                  <code className="element-code">{selectedIssue.element}</code>
+                </div>
               )}
               {selectedIssue.src && (
-                <p><strong>ソース:</strong> {selectedIssue.src}</p>
+                <div className="modal-section">
+                  <strong>ソース:</strong>
+                  <p className="source-text">{selectedIssue.src}</p>
+                </div>
               )}
               {selectedIssue.href && (
-                <p><strong>リンク先:</strong> {selectedIssue.href}</p>
+                <div className="modal-section">
+                  <strong>リンク先:</strong>
+                  <p className="link-text">{selectedIssue.href}</p>
+                </div>
               )}
             </>
           )}
@@ -304,7 +445,7 @@ export const TabContent: React.FC<TabContentProps> = ({
 
   return (
     <div
-      className="tab-content"
+      className="tab-content-modern"
       role="tabpanel"
       id={`tabpanel-${activeTab}`}
       aria-labelledby={`tab-${activeTab}`}

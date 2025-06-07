@@ -9,6 +9,9 @@ import * as cheerio from 'cheerio';
  * @returns {Object} 診断結果
  */
 export async function checkSinglePage(url) {
+    // グローバル変数として現在のURLを保存（画像URL解決用）
+    global.currentUrl = url;
+    
     const browser = await puppeteer.launch({
         headless: 'new',
         executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
@@ -224,13 +227,57 @@ function getAllHeadings($) {
     
     return headings.map((heading, index) => {
         const level = parseInt(heading.tagName.charAt(1));
-        const text = $(heading).text().trim();
+        const $heading = $(heading);
+        let text = $heading.text().trim();
+        const images = [];
+        
+        // 見出し内の画像情報を詳細取得
+        $heading.find('img').each((i, img) => {
+            const $img = $(img);
+            const alt = $img.attr('alt') || '';
+            const title = $img.attr('title') || '';
+            const src = $img.attr('src');
+            const width = $img.attr('width');
+            const height = $img.attr('height');
+            
+            // 相対URLを絶対URLに変換（簡易版）
+            let absoluteSrc = src;
+            if (src && !src.startsWith('http') && !src.startsWith('data:')) {
+                if (src.startsWith('//')) {
+                    absoluteSrc = 'https:' + src;
+                } else if (src.startsWith('/')) {
+                    absoluteSrc = new URL(src, global.currentUrl || 'https://example.com').href;
+                } else {
+                    absoluteSrc = new URL(src, global.currentUrl || 'https://example.com').href;
+                }
+            }
+            
+            images.push({
+                src: absoluteSrc,
+                alt: alt,
+                title: title,
+                width: width ? parseInt(width) : null,
+                height: height ? parseInt(height) : null,
+                filename: src ? src.split('/').pop().split('.')[0] : ''
+            });
+        });
+        
+        // テキストが空で画像がある場合、画像情報を含める
+        if (!text && images.length > 0) {
+            const imageTexts = images.map(img => 
+                img.alt || img.title || img.filename || '無題画像'
+            );
+            text = imageTexts.join(', ');
+        }
         
         return {
             level,
             tag: heading.tagName.toLowerCase(),
-            text,
-            index
+            text: text || '',
+            index,
+            images: images,
+            hasImage: images.length > 0,
+            isEmpty: !text && images.length === 0
         };
     });
 }

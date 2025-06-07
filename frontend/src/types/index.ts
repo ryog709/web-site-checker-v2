@@ -6,11 +6,23 @@ export interface LighthouseScores {
   pwa: number;
 }
 
+export interface HeadingImage {
+  src: string;
+  alt: string;
+  title: string;
+  width: number | null;
+  height: number | null;
+  filename: string;
+}
+
 export interface Heading {
   level: number;
   tag: string;
   text: string;
   index: number;
+  images: HeadingImage[];
+  hasImage?: boolean;
+  isEmpty?: boolean;
 }
 
 export interface Issue {
