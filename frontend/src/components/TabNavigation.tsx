@@ -1,6 +1,6 @@
 import React from 'react';
 import type { TabType, CheckResult } from '../types/index.js';
-import { Heading, Image, Link, FileText, Eye } from 'lucide-react';
+import { Heading, Image, AlertTriangle, Link, FileText, Eye } from 'lucide-react';
 
 interface TabNavigationProps {
   activeTab: TabType;
@@ -22,8 +22,14 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
     },
     {
       id: 'images' as TabType,
-      label: '画像',
+      label: '画像一覧',
       icon: Image,
+      count: 0, // 全画像表示なので問題数ではない
+    },
+    {
+      id: 'image-issues' as TabType,
+      label: '画像の問題',
+      icon: AlertTriangle,
       count: issues.images.length,
     },
     {

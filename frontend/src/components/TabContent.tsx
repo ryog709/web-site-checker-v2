@@ -384,16 +384,9 @@ export const TabContent: React.FC<TabContentProps> = ({
           </div>
         );
       case 'images':
-        return (
-          <div className="images-tab-modern">
-            {renderAllImages(issues.allImages || [])}
-            {issues.images.length > 0 && (
-              <div className="images-issues-section">
-                {renderIssueTable(issues.images, '画像の問題')}
-              </div>
-            )}
-          </div>
-        );
+        return renderAllImages(issues.allImages || []);
+      case 'image-issues':
+        return renderIssueTable(issues.images, '画像の問題');
       case 'links':
         return renderIssueTable(issues.links, 'リンク');
       case 'meta':

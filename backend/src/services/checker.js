@@ -303,9 +303,9 @@ function analyzeHeadings($) {
         // 空の見出し（画像がある場合は問題なし）
         if (!text && !hasImages) {
             issues.push({
-                type: 'empty_heading',
+                type: '空の見出し',
                 element: heading.tagName,
-                message: 'Empty heading found',
+                message: '見出しが空です',
                 severity: 'error'
             });
         }
@@ -313,9 +313,9 @@ function analyzeHeadings($) {
         // 見出しレベルのスキップ
         if (index > 0 && level > previousLevel + 1) {
             issues.push({
-                type: 'skipped_heading_level',
+                type: '見出しレベルスキップ',
                 element: heading.tagName,
-                message: `Heading level skipped from h${previousLevel} to h${level}`,
+                message: `見出しレベルがh${previousLevel}からh${level}にスキップしています`,
                 severity: 'warning'
             });
         }
@@ -327,14 +327,14 @@ function analyzeHeadings($) {
     const h1Count = $('h1').length;
     if (h1Count === 0) {
         issues.push({
-            type: 'missing_h1',
-            message: 'No h1 heading found',
+            type: 'h1なし',
+            message: 'h1見出しが見つかりません',
             severity: 'error'
         });
     } else if (h1Count > 1) {
         issues.push({
-            type: 'multiple_h1',
-            message: `Multiple h1 headings found (${h1Count})`,
+            type: '複数h1',
+            message: `h1見出しが複数あります（${h1Count}個）`,
             severity: 'warning'
         });
     }
@@ -405,10 +405,10 @@ function analyzeImages($) {
         // alt属性チェック
         if (alt === undefined) {
             issues.push({
-                type: 'missing_alt',
+                type: 'alt属性なし',
                 element: 'img',
                 src: src,
-                message: 'Image missing alt attribute',
+                message: 'alt属性が設定されていません',
                 severity: 'error'
             });
         }
@@ -416,10 +416,10 @@ function analyzeImages($) {
         // 幅・高さ属性チェック
         if (!width || !height) {
             issues.push({
-                type: 'missing_dimensions',
+                type: 'サイズ属性なし',
                 element: 'img',
                 src: src,
-                message: 'Image missing width or height attributes',
+                message: 'width属性またはheight属性が設定されていません',
                 severity: 'warning'
             });
         }
@@ -446,10 +446,10 @@ function analyzeLinks($) {
         // 空のリンクテキスト
         if (!text && !$link.find('img[alt]').length) {
             issues.push({
-                type: 'empty_link_text',
+                type: 'リンクテキストなし',
                 element: 'a',
                 href: href,
-                message: 'Link has no accessible text',
+                message: 'リンクにアクセス可能なテキストがありません',
                 severity: 'error'
             });
         }
@@ -457,10 +457,10 @@ function analyzeLinks($) {
         // 外部リンクのセキュリティ
         if (target === '_blank' && (!rel || !rel.includes('noopener'))) {
             issues.push({
-                type: 'missing_noopener',
+                type: 'セキュリティ不備',
                 element: 'a',
                 href: href,
-                message: 'External link missing rel="noopener"',
+                message: '外部リンクにrel="noopener"が設定されていません',
                 severity: 'warning'
             });
         }
@@ -481,24 +481,24 @@ function analyzeMeta($) {
     const requiredMeta = [{
             name: 'title',
             selector: 'title',
-            message: 'Missing title tag'
+            message: 'titleタグがありません'
         },
         {
             name: 'description',
             selector: 'meta[name="description"]',
-            message: 'Missing meta description'
+            message: 'meta descriptionが設定されていません'
         },
         {
             name: 'viewport',
             selector: 'meta[name="viewport"]',
-            message: 'Missing viewport meta tag'
+            message: 'viewport meta tagが設定されていません'
         }
     ];
 
     requiredMeta.forEach(meta => {
         if ($(meta.selector).length === 0) {
             issues.push({
-                type: 'missing_meta',
+                type: 'メタタグなし',
                 element: meta.name,
                 message: meta.message,
                 severity: 'error'
@@ -512,8 +512,8 @@ function analyzeMeta($) {
 
     if (missingOgTags.length > 0) {
         issues.push({
-            type: 'missing_og_tags',
-            message: `Missing Open Graph tags: ${missingOgTags.join(', ')}`,
+            type: 'OGタグなし',
+            message: `Open Graphタグが不足しています: ${missingOgTags.join(', ')}`,
             severity: 'info'
         });
     }

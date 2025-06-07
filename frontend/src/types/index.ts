@@ -91,4 +91,4 @@ export interface CrawlResult {
   results: CheckResult[];
 }
 
-export type TabType = 'headings' | 'images' | 'links' | 'meta' | 'accessibility';
+export type TabType = 'headings' | 'images' | 'image-issues' | 'links' | 'meta' | 'accessibility';
