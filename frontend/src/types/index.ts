@@ -6,6 +6,19 @@ export interface LighthouseScores {
   pwa: number;
 }
 
+export interface ImageInfo {
+  index: number;
+  src: string;
+  originalSrc: string;
+  alt: string;
+  title: string;
+  width: number | null;
+  height: number | null;
+  hasAlt: boolean;
+  hasDimensions: boolean;
+  filename: string;
+}
+
 export interface HeadingImage {
   src: string;
   alt: string;
@@ -60,6 +73,7 @@ export interface CheckResult {
     headings: Issue[];
     headingsStructure: Heading[]; // 新しい項目を追加
     images: Issue[];
+    allImages: ImageInfo[]; // 全ての画像情報を追加
     links: Issue[];
     meta: Issue[];
     accessibility: {

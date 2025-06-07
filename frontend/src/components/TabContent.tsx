@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { TabType, CheckResult, Issue, Heading } from '../types/index.js';
+import type { TabType, CheckResult, Issue, Heading, ImageInfo } from '../types/index.js';
 import { ExternalLink, AlertTriangle, AlertCircle, Info, Image as ImageIcon, FileText, Eye } from 'lucide-react';
 import { Modal } from './Modal.js';
 
@@ -106,6 +106,117 @@ export const TabContent: React.FC<TabContentProps> = ({
               </div>
             );
           })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderAllImages = (allImages: ImageInfo[]) => {
+    if (allImages.length === 0) {
+      return (
+        <div className="no-issues">
+          <div className="empty-state">
+            <ImageIcon size={48} className="empty-icon" />
+            <h3>画像が見つかりませんでした</h3>
+            <p>このページには画像要素（img）がありません</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="all-images-section">
+        <div className="section-header">
+          <div className="section-title">
+            <ImageIcon size={20} />
+            <h4>全ての画像</h4>
+            <span className="count-badge">{allImages.length}</span>
+          </div>
+          <p className="section-description">
+            ページ内の全ての画像と属性情報を表示。width/heightの設定状況を確認できます。
+          </p>
+        </div>
+
+        <div className="images-grid">
+          {allImages.map((image, index) => (
+            <div key={index} className="image-card">
+              <div className="image-preview-container">
+                {image.src && image.src !== 'undefined' ? (
+                  <img 
+                    src={image.src} 
+                    alt={image.alt || `画像 ${image.index}`}
+                    className="image-preview-full"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : (
+                  <div className="image-fallback-full">
+                    <ImageIcon size={32} />
+                    <span>画像を読み込めません</span>
+                  </div>
+                )}
+                <div className="image-fallback-full" style={{ display: 'none' }}>
+                  <ImageIcon size={32} />
+                  <span>画像を読み込めません</span>
+                </div>
+              </div>
+              
+              <div className="image-info-card">
+                <div className="image-number">#{image.index}</div>
+                
+                <div className="image-attributes">
+                  <div className="attribute-row">
+                    <span className="attribute-label">Alt:</span>
+                    {image.hasAlt ? (
+                      <span className="attribute-value alt-present">"{image.alt}"</span>
+                    ) : (
+                      <span className="attribute-value alt-missing">⚠️ なし</span>
+                    )}
+                  </div>
+                  
+                  <div className="attribute-row">
+                    <span className="attribute-label">Width:</span>
+                    <span className={`attribute-value ${image.width ? 'dimension-present' : 'dimension-missing'}`}>
+                      {image.width || '❌ なし'}
+                    </span>
+                  </div>
+                  
+                  <div className="attribute-row">
+                    <span className="attribute-label">Height:</span>
+                    <span className={`attribute-value ${image.height ? 'dimension-present' : 'dimension-missing'}`}>
+                      {image.height || '❌ なし'}
+                    </span>
+                  </div>
+                  
+                  {image.title && (
+                    <div className="attribute-row">
+                      <span className="attribute-label">Title:</span>
+                      <span className="attribute-value">"{image.title}"</span>
+                    </div>
+                  )}
+                  
+                  <div className="attribute-row">
+                    <span className="attribute-label">ファイル:</span>
+                    <span className="attribute-value filename">{image.filename}</span>
+                  </div>
+                </div>
+                
+                <div className="image-status">
+                  {image.hasAlt && image.hasDimensions && (
+                    <span className="status-good">✅ 完璧</span>
+                  )}
+                  {!image.hasAlt && (
+                    <span className="status-warning">⚠️ Alt属性なし</span>
+                  )}
+                  {!image.hasDimensions && (
+                    <span className="status-warning">⚠️ サイズ属性なし</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -273,7 +384,16 @@ export const TabContent: React.FC<TabContentProps> = ({
           </div>
         );
       case 'images':
-        return renderIssueTable(issues.images, '画像');
+        return (
+          <div className="images-tab-modern">
+            {renderAllImages(issues.allImages || [])}
+            {issues.images.length > 0 && (
+              <div className="images-issues-section">
+                {renderIssueTable(issues.images, '画像の問題')}
+              </div>
+            )}
+          </div>
+        );
       case 'links':
         return renderIssueTable(issues.links, 'リンク');
       case 'meta':

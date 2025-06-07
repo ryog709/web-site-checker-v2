@@ -212,6 +212,7 @@ async function analyzeDom(page) {
         headings: analyzeHeadings($),
         headingsStructure: getAllHeadings($), // 新しい項目を追加
         images: analyzeImages($),
+        allImages: getAllImages($), // 全ての画像情報を追加
         links: analyzeLinks($),
         meta: analyzeMeta($)
     };
@@ -295,10 +296,12 @@ function analyzeHeadings($) {
 
     headings.forEach((heading, index) => {
         const level = parseInt(heading.tagName.charAt(1));
-        const text = $(heading).text().trim();
+        const $heading = $(heading);
+        const text = $heading.text().trim();
+        const hasImages = $heading.find('img').length > 0;
 
-        // 空の見出し
-        if (!text) {
+        // 空の見出し（画像がある場合は問題なし）
+        if (!text && !hasImages) {
             issues.push({
                 type: 'empty_heading',
                 element: heading.tagName,
@@ -337,6 +340,51 @@ function analyzeHeadings($) {
     }
 
     return issues;
+}
+
+/**
+ * 全ての画像情報を取得
+ * @param {Object} $ - Cheerio instance
+ * @returns {Array} 全画像一覧（詳細情報付き）
+ */
+function getAllImages($) {
+    const images = [];
+    
+    $('img').each((index, img) => {
+        const $img = $(img);
+        const src = $img.attr('src');
+        const alt = $img.attr('alt');
+        const title = $img.attr('title');
+        const width = $img.attr('width');
+        const height = $img.attr('height');
+        
+        // 相対URLを絶対URLに変換
+        let absoluteSrc = src;
+        if (src && !src.startsWith('http') && !src.startsWith('data:')) {
+            if (src.startsWith('//')) {
+                absoluteSrc = 'https:' + src;
+            } else if (src.startsWith('/')) {
+                absoluteSrc = new URL(src, global.currentUrl || 'https://example.com').href;
+            } else {
+                absoluteSrc = new URL(src, global.currentUrl || 'https://example.com').href;
+            }
+        }
+        
+        images.push({
+            index: index + 1,
+            src: absoluteSrc,
+            originalSrc: src,
+            alt: alt || '',
+            title: title || '',
+            width: width ? parseInt(width) : null,
+            height: height ? parseInt(height) : null,
+            hasAlt: !!alt,
+            hasDimensions: !!(width && height),
+            filename: src ? src.split('/').pop() : 'unknown'
+        });
+    });
+    
+    return images;
 }
 
 /**
