@@ -454,6 +454,7 @@ function analyzeLinks($) {
         const text = $link.text().trim();
         const target = $link.attr('target');
         const rel = $link.attr('rel');
+        const html = $link.html();
 
         // 空のリンクテキスト
         if (!text && !$link.find('img[alt]').length) {
@@ -461,6 +462,8 @@ function analyzeLinks($) {
                 type: 'リンクテキストなし',
                 element: 'a',
                 href: href,
+                linkText: text || '（テキストなし）',
+                linkHtml: html || '',
                 message: 'リンクにアクセス可能なテキストがありません',
                 severity: 'error'
             });
@@ -472,6 +475,8 @@ function analyzeLinks($) {
                 type: 'セキュリティ不備',
                 element: 'a',
                 href: href,
+                linkText: text || '（テキストなし）',
+                linkHtml: html || '',
                 message: '外部リンクにrel="noopener"が設定されていません',
                 severity: 'warning'
             });

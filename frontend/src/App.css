@@ -1940,6 +1940,67 @@ body {
   }
 }
 
+/* 🔗 Link Issue Details */
+.link-issue-details {
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.link-url {
+  font-family: 'SF Mono', Monaco, monospace;
+  background: var(--color-background);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  color: var(--color-primary);
+  word-break: break-all;
+  margin-left: var(--spacing-sm);
+}
+
+.link-text {
+  font-style: italic;
+  color: var(--color-success);
+  margin-left: var(--spacing-sm);
+}
+
+.link-html {
+  font-family: 'SF Mono', Monaco, monospace;
+  background: var(--color-background);
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  display: block;
+  margin-top: var(--spacing-xs);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.issue-explanation {
+  padding: var(--spacing-sm);
+  background: rgba(255, 193, 7, 0.1);
+  border-left: 3px solid var(--color-warning);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.issue-explanation strong {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  color: var(--color-text-primary);
+}
+
+.issue-explanation span {
+  color: var(--color-text-secondary);
+}
+
 /* 🖼️ Issue Image Preview */
 .issue-image-preview {
   width: 100%;

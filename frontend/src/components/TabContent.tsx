@@ -294,12 +294,47 @@ export const TabContent: React.FC<TabContentProps> = ({
                 {issue.element && (
                   <code className="issue-element">{issue.element}</code>
                 )}
+                
+                {/* リンク問題の場合は詳細情報を表示 */}
+                {title === 'リンク' && issue.href && (
+                  <div className="link-issue-details">
+                    <div className="issue-detail">
+                      <strong>リンク先:</strong> 
+                      <span className="link-url">{issue.href}</span>
+                    </div>
+                    
+                    {issue.linkText && (
+                      <div className="issue-detail">
+                        <strong>リンクテキスト:</strong> 
+                        <span className="link-text">"{issue.linkText}"</span>
+                      </div>
+                    )}
+                    
+                    {issue.linkHtml && (
+                      <div className="issue-detail">
+                        <strong>HTML:</strong>
+                        <code className="link-html">{issue.linkHtml}</code>
+                      </div>
+                    )}
+                    
+                    <div className="issue-explanation">
+                      <strong>問題の説明:</strong>
+                      {issue.type === 'リンクテキストなし' && (
+                        <span>このリンクには読み上げソフトが理解できるテキストがありません。視覚障害のあるユーザーがリンクの目的を理解できません。alt属性のある画像を含むか、aria-labelを追加してください。</span>
+                      )}
+                      {issue.type === 'セキュリティ不備' && (
+                        <span>外部サイトへのリンクにセキュリティ対策が不足しています。悪意のあるサイトがタブを乗っ取る可能性があります。rel="noopener"を追加してください。</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
                 {issue.src && (
                   <div className="issue-detail">
                     <strong>ソース:</strong> {issue.src}
                   </div>
                 )}
-                {issue.href && (
+                {issue.href && title !== 'リンク' && (
                   <div className="issue-detail">
                     <strong>リンク:</strong> {issue.href}
                   </div>
