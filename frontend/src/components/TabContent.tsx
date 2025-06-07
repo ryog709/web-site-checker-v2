@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { TabType, CheckResult, Issue, Heading } from '../types/index.js';
-import { ExternalLink, AlertTriangle, AlertCircle, Info, ChevronRight, Image as ImageIcon, FileText, Eye } from 'lucide-react';
+import { ExternalLink, AlertTriangle, AlertCircle, Info, Image as ImageIcon, FileText, Eye } from 'lucide-react';
 import { Modal } from './Modal.js';
 
 interface TabContentProps {
@@ -17,17 +17,6 @@ export const TabContent: React.FC<TabContentProps> = ({
   allResults,
 }) => {
   const [selectedIssue, setSelectedIssue] = useState<any>(null);
-  const [expandedHeadings, setExpandedHeadings] = useState<Set<number>>(new Set());
-
-  const toggleHeading = (index: number) => {
-    const newExpanded = new Set(expandedHeadings);
-    if (newExpanded.has(index)) {
-      newExpanded.delete(index);
-    } else {
-      newExpanded.add(index);
-    }
-    setExpandedHeadings(newExpanded);
-  };
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
@@ -71,7 +60,6 @@ export const TabContent: React.FC<TabContentProps> = ({
 
         <div className="headings-tree-modern">
           {headingsStructure.map((heading, index) => {
-            const isExpanded = expandedHeadings.has(index);
             const indentLevel = (heading.level - 1) * 24;
             
             return (
@@ -80,82 +68,41 @@ export const TabContent: React.FC<TabContentProps> = ({
                 className={`heading-card ${heading.hasImage ? 'has-image' : ''} ${heading.isEmpty ? 'is-empty' : ''}`}
                 style={{ marginLeft: `${indentLevel}px` }}
               >
-                <div 
-                  className="heading-main"
-                  onClick={() => heading.hasImage && toggleHeading(index)}
-                  style={{ cursor: heading.hasImage ? 'pointer' : 'default' }}
-                >
-                  <div className="heading-info">
+                <div className="heading-main">
+                  <div className="heading-info-horizontal">
                     <span className={`heading-level-badge level-${heading.level}`}>
                       {heading.tag}
                     </span>
-                    <div className="heading-content">
-                      <span className="heading-text-modern">
-                        {heading.text || '（内容なし）'}
-                      </span>
-                      {heading.hasImage && (
-                        <div className="heading-meta">
-                          <ImageIcon size={14} />
-                          <span>{heading.images.length}個の画像</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  {heading.hasImage && (
-                    <ChevronRight 
-                      size={16} 
-                      className={`expand-icon ${isExpanded ? 'expanded' : ''}`}
-                    />
-                  )}
-                </div>
-
-                {heading.hasImage && isExpanded && (
-                  <div className="heading-images">
-                    {heading.images.map((img, imgIndex) => (
-                      <div key={imgIndex} className="image-preview">
-                        <div className="image-container">
-                          {img.src && img.src !== 'undefined' ? (
-                            <img 
-                              src={img.src} 
-                              alt={img.alt || '画像'}
-                              className="preview-image"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                e.currentTarget.nextElementSibling.style.display = 'flex';
-                              }}
-                            />
-                          ) : null}
-                          <div className="image-fallback" style={{ display: 'none' }}>
-                            <ImageIcon size={24} />
-                            <span>画像を読み込めません</span>
-                          </div>
-                        </div>
-                        <div className="image-details">
-                          <div className="image-alt">
-                            {img.alt ? (
-                              <><strong>Alt:</strong> {img.alt}</>
+                    <span className="heading-text-modern">
+                      {heading.text || '（内容なし）'}
+                    </span>
+                    
+                    {/* 画像を同じ行に表示（テキスト情報なし） */}
+                    {heading.hasImage && heading.images.length > 0 && (
+                      <div className="heading-images-horizontal">
+                        {heading.images.map((img, imgIndex) => (
+                          <div key={imgIndex} className="image-container-horizontal">
+                            {img.src && img.src !== 'undefined' ? (
+                              <img 
+                                src={img.src} 
+                                alt={img.alt || '画像'}
+                                className="preview-image-horizontal"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.nextElementSibling.style.display = 'flex';
+                                }}
+                              />
                             ) : (
-                              <span className="missing-alt">⚠️ Alt属性なし</span>
+                              <div className="image-fallback-horizontal">
+                                <ImageIcon size={24} />
+                              </div>
                             )}
                           </div>
-                          {img.title && (
-                            <div className="image-title">
-                              <strong>Title:</strong> {img.title}
-                            </div>
-                          )}
-                          {(img.width || img.height) && (
-                            <div className="image-dimensions">
-                              <strong>サイズ:</strong> {img.width || '?'} × {img.height || '?'}px
-                            </div>
-                          )}
-                          <div className="image-filename">
-                            <strong>ファイル:</strong> {img.filename || 'unknown'}
-                          </div>
-                        </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             );
           })}

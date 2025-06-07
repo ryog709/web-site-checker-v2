@@ -14,20 +14,20 @@
   --color-text-primary: #1e293b;
   --color-text-secondary: #64748b;
   --color-text-muted: #94a3b8;
-  
+
   /* Status colors */
   --color-error: #dc2626;
   --color-warning: #d97706;
   --color-info: #2563eb;
   --color-success: #16a34a;
-  
+
   /* Score colors */
   --score-performance: #0CCE6A;
   --score-accessibility: #FFA400;
   --score-best-practices: #FF4E42;
   --score-seo: #0CCE6A;
   --score-pwa: #9C27B0;
-  
+
   /* Spacing */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
@@ -35,13 +35,13 @@
   --spacing-lg: 1.5rem;
   --spacing-xl: 2rem;
   --spacing-2xl: 3rem;
-  
+
   /* Border radius */
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
-  
+
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
@@ -663,47 +663,47 @@ body {
   .app {
     padding: var(--spacing-sm);
   }
-  
+
   .app-header h1 {
     font-size: 2rem;
   }
-  
+
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .score-rings {
     grid-template-columns: repeat(2, 1fr);
     gap: var(--spacing-sm);
   }
-  
+
   .summary-cards {
     grid-template-columns: 1fr;
   }
-  
+
   .radio-group {
     flex-direction: column;
     gap: var(--spacing-sm);
   }
-  
+
   .result-meta {
     flex-direction: column;
     gap: var(--spacing-sm);
   }
-  
+
   .tab-navigation {
     flex-wrap: wrap;
   }
-  
+
   .issues-table {
     font-size: 0.75rem;
   }
-  
+
   .issues-table th,
   .issues-table td {
     padding: var(--spacing-sm);
   }
-  
+
   .modal {
     margin: var(--spacing-sm);
     max-height: calc(100vh - 2rem);
@@ -714,7 +714,7 @@ body {
   .score-rings {
     grid-template-columns: 1fr;
   }
-  
+
   .tab-button {
     padding: var(--spacing-sm) var(--spacing-md);
     font-size: 0.75rem;
@@ -814,7 +814,150 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  cursor: pointer;
+}
+
+/* 🖼️ インライン画像プレビュー */
+.heading-images-inline {
+  padding: var(--spacing-md) var(--spacing-lg) var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+  background: rgba(248, 250, 252, 0.8);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.image-preview-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-sm);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  min-width: 300px;
+  flex: 1;
+}
+
+.image-container-inline {
+  flex-shrink: 0;
+  width: 60px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.preview-image-inline {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+}
+
+.preview-image-inline:hover {
+  transform: scale(1.1);
+}
+
+.image-fallback-inline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--color-text-muted);
+  font-size: 0.6rem;
+  text-align: center;
+}
+
+.image-details-inline {
+  flex: 1;
+  font-size: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.image-info {
+  font-weight: 500;
+}
+
+.image-alt-text {
+  color: var(--color-success);
+  font-style: italic;
+}
+
+.missing-alt-inline {
+  color: var(--color-error);
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.image-title-inline {
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+}
+
+.image-size-inline {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.heading-info-horizontal {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex: 1;
+}
+
+.heading-text-modern {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  flex: 1;
+}
+
+/* 🖼️ 横並び画像プレビュー（シンプル） */
+.heading-images-horizontal {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-left: var(--spacing-md);
+}
+
+.image-container-horizontal {
+  width: 80px;
+  height: 60px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.preview-image-horizontal {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+}
+
+.preview-image-horizontal:hover {
+  transform: scale(1.05);
+}
+
+.image-fallback-horizontal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  width: 100%;
+  height: 100%;
 }
 
 .heading-info {
@@ -1091,7 +1234,7 @@ body {
   .spinner-icon {
     animation: none;
   }
-  
+
   .score-ring-progress {
     transition: none;
   }
@@ -1454,60 +1597,60 @@ body {
   .app {
     padding: var(--spacing-sm);
   }
-  
+
   .app-header {
     padding: var(--spacing-lg);
   }
-  
+
   .app-header h1 {
     font-size: 2.5rem;
   }
-  
+
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .score-rings {
     grid-template-columns: repeat(2, 1fr);
     gap: var(--spacing-sm);
   }
-  
+
   .summary-cards {
     grid-template-columns: 1fr;
   }
-  
+
   .radio-group {
     flex-direction: column;
     gap: var(--spacing-sm);
   }
-  
+
   .result-meta {
     flex-direction: column;
     gap: var(--spacing-sm);
   }
-  
+
   .tab-navigation {
     flex-wrap: wrap;
   }
-  
+
   .issues-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .image-preview {
     flex-direction: column;
   }
-  
+
   .image-container {
     width: 100%;
     height: 200px;
   }
-  
+
   .modal {
     margin: var(--spacing-sm);
     max-height: calc(100vh - 2rem);
   }
-  
+
   .heading-main {
     flex-direction: column;
     align-items: flex-start;
@@ -1519,18 +1662,18 @@ body {
   .score-rings {
     grid-template-columns: 1fr;
   }
-  
+
   .tab-button {
     padding: var(--spacing-sm) var(--spacing-md);
     font-size: 0.875rem;
   }
-  
+
   .section-title {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--spacing-sm);
   }
-  
+
   .heading-level-badge {
     min-width: 2.5rem;
     font-size: 0.75rem;
@@ -1573,7 +1716,7 @@ body {
     animation: none;
     transition: none;
   }
-  
+
   .spinner-icon {
     animation: none;
   }
@@ -1584,14 +1727,14 @@ body {
   body {
     background: white;
   }
-  
+
   .app-header,
   .tab-navigation,
   .detail-button-modern,
   .modal-overlay {
     display: none;
   }
-  
+
   .dashboard,
   .headings-structure-modern,
   .accessibility-section {
