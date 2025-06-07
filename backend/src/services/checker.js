@@ -402,12 +402,24 @@ function analyzeImages($) {
         const width = $img.attr('width');
         const height = $img.attr('height');
 
+        // 相対URLを絶対URLに変換
+        let absoluteSrc = src;
+        if (src && !src.startsWith('http') && !src.startsWith('data:')) {
+            if (src.startsWith('//')) {
+                absoluteSrc = 'https:' + src;
+            } else if (src.startsWith('/')) {
+                absoluteSrc = new URL(src, global.currentUrl || 'https://example.com').href;
+            } else {
+                absoluteSrc = new URL(src, global.currentUrl || 'https://example.com').href;
+            }
+        }
+
         // alt属性チェック
         if (alt === undefined) {
             issues.push({
                 type: 'alt属性なし',
                 element: 'img',
-                src: src,
+                src: absoluteSrc,
                 message: 'alt属性が設定されていません',
                 severity: 'error'
             });
@@ -416,9 +428,9 @@ function analyzeImages($) {
         // 幅・高さ属性チェック
         if (!width || !height) {
             issues.push({
-                type: 'サイズ属性なし',
+                type: 'サイズ不備',
                 element: 'img',
-                src: src,
+                src: absoluteSrc,
                 message: 'width属性またはheight属性が設定されていません',
                 severity: 'warning'
             });

@@ -258,8 +258,37 @@ export const TabContent: React.FC<TabContentProps> = ({
             <div key={index} className={`issue-card severity-${issue.severity}`}>
               <div className="issue-header">
                 {getSeverityIcon(issue.severity)}
-                <span className="issue-type">{issue.type}</span>
+                <span className="issue-type">{issue.type || 'その他'}</span>
               </div>
+              
+              {/* 画像問題の場合は画像プレビューを表示 */}
+              {issue.src && title === '画像' && (
+                <div className="issue-image-preview">
+                  {isValidImageUrl(issue.src) ? (
+                    <img 
+                      src={getProxiedImageUrl(issue.src)} 
+                      alt="問題のある画像"
+                      className="issue-preview-image"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        if (e.currentTarget.nextElementSibling) {
+                          (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="issue-image-fallback">
+                      <ImageIcon size={32} />
+                      <span>画像を読み込めません</span>
+                    </div>
+                  )}
+                  <div className="issue-image-fallback" style={{ display: 'none' }}>
+                    <ImageIcon size={32} />
+                    <span>画像を読み込めません</span>
+                  </div>
+                </div>
+              )}
+              
               <div className="issue-content">
                 <h5 className="issue-message">{issue.message}</h5>
                 {issue.element && (

@@ -101,11 +101,14 @@ router.get('/proxy-image', async (req, res) => {
       return res.status(400).json({ error: 'Not an image' });
     }
 
-    // ヘッダーを設定
+    // CORSヘッダーを設定
     res.set({
       'Content-Type': contentType,
-      'Cache-Control': 'public, max-age=3600', // 1時間キャッシュ
-      'Access-Control-Allow-Origin': '*'
+      'Cache-Control': 'public, max-age=3600',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET',
+      'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept',
+      'Cross-Origin-Resource-Policy': 'cross-origin'
     });
 
     // 画像データをストリーミング
