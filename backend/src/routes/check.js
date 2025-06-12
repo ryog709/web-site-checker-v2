@@ -11,7 +11,7 @@ const router = express.Router();
  */
 router.post('/check', async (req, res) => {
   try {
-    const { url } = req.body;
+    const { url, auth } = req.body;
     
     // URL バリデーション
     const validationError = validateUrl(url);
@@ -19,7 +19,7 @@ router.post('/check', async (req, res) => {
       return res.status(400).json({ error: validationError });
     }
 
-    const result = await checkSinglePage(url);
+    const result = await checkSinglePage(url, auth);
     res.json(result);
   } catch (error) {
     console.error('Check API Error:', error);
@@ -36,7 +36,7 @@ router.post('/check', async (req, res) => {
  */
 router.post('/crawl', async (req, res) => {
   try {
-    const { startUrl, maxPages = process.env.MAX_PAGES || 30 } = req.body;
+    const { startUrl, maxPages = process.env.MAX_PAGES || 30, auth } = req.body;
     
     // URL バリデーション
     const validationError = validateUrl(startUrl);
@@ -51,7 +51,7 @@ router.post('/crawl', async (req, res) => {
       });
     }
 
-    const results = await crawlSite(startUrl, maxPages);
+    const results = await crawlSite(startUrl, maxPages, auth);
     res.json(results);
   } catch (error) {
     console.error('Crawl API Error:', error);
@@ -64,11 +64,11 @@ router.post('/crawl', async (req, res) => {
 
 /**
  * 画像プロキシAPI
- * GET /api/proxy-image?url=<image_url>
+ * GET /api/proxy-image?url=<image_url>&auth=<base64_encoded_credentials>
  */
 router.get('/proxy-image', async (req, res) => {
   try {
-    const { url } = req.query;
+    const { url, auth } = req.query;
     
     if (!url) {
       return res.status(400).json({ error: 'URL parameter is required' });
@@ -81,11 +81,25 @@ router.get('/proxy-image', async (req, res) => {
       return res.status(400).json({ error: 'Invalid URL' });
     }
 
+    // ヘッダーを準備
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (compatible; Web-Site-Checker/2.0)',
+    };
+
+    // ベーシック認証が必要な場合
+    if (auth) {
+      try {
+        // Base64でエンコードされた認証情報をデコード
+        const decodedAuth = Buffer.from(auth, 'base64').toString('utf-8');
+        headers['Authorization'] = `Basic ${auth}`;
+      } catch (e) {
+        console.warn('Invalid auth parameter:', e.message);
+      }
+    }
+
     // 画像を取得
     const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; Web-Site-Checker/2.0)',
-      },
+      headers,
       timeout: 10000,
     });
 

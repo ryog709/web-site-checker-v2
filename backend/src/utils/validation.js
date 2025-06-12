@@ -15,20 +15,13 @@ export function validateUrl(url) {
   try {
     const urlObj = new URL(url);
     
-    // HTTPSのみ許可
-    if (urlObj.protocol !== 'https:') {
-      return 'Only HTTPS URLs are allowed';
+    // HTTPとHTTPSを許可
+    if (urlObj.protocol !== 'https:' && urlObj.protocol !== 'http:') {
+      return 'Only HTTP and HTTPS URLs are allowed';
     }
 
-    // ローカルホストの確認
-    if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1') {
-      return 'Localhost URLs are not allowed';
-    }
-
-    // IPアドレスの確認（簡易）
-    if (/^\d+\.\d+\.\d+\.\d+$/.test(urlObj.hostname)) {
-      return 'IP addresses are not allowed';
-    }
+    // ローカルホストとIPアドレスを許可（開発用）
+    // 本番環境では別途制限を設ける場合は環境変数で制御
 
     return null;
   } catch (error) {

@@ -81,6 +81,7 @@ export interface CheckResult {
       axe: AxeViolation[];
     };
   };
+  auth?: BasicAuth; // 使用された認証情報を保存
   error?: string;
 }
 
@@ -89,6 +90,23 @@ export interface CrawlResult {
   totalPages: number;
   timestamp: string;
   results: CheckResult[];
+  auth?: BasicAuth; // 使用された認証情報を保存
+}
+
+export interface BasicAuth {
+  username: string;
+  password: string;
+}
+
+export interface CheckRequest {
+  url: string;
+  auth?: BasicAuth;
+}
+
+export interface CrawlRequest {
+  startUrl: string;
+  maxPages: number;
+  auth?: BasicAuth;
 }
 
 export type TabType = 'headings' | 'images' | 'image-issues' | 'links' | 'meta' | 'accessibility';

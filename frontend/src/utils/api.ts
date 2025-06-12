@@ -1,4 +1,4 @@
-import type { CheckResult, CrawlResult } from '../types/index.js';
+import type { CheckResult, CrawlResult, BasicAuth } from '../types/index.js';
 
 const API_BASE_URL = 'http://localhost:4000/api';
 
@@ -36,16 +36,16 @@ async function makeRequest<T>(url: string, options: RequestInit = {}): Promise<T
   }
 }
 
-export async function checkSinglePage(url: string): Promise<CheckResult> {
+export async function checkSinglePage(url: string, auth?: BasicAuth): Promise<CheckResult> {
   return makeRequest<CheckResult>('/check', {
     method: 'POST',
-    body: JSON.stringify({ url }),
+    body: JSON.stringify({ url, auth }),
   });
 }
 
-export async function crawlSite(startUrl: string, maxPages: number = 30): Promise<CrawlResult> {
+export async function crawlSite(startUrl: string, maxPages: number = 30, auth?: BasicAuth): Promise<CrawlResult> {
   return makeRequest<CrawlResult>('/crawl', {
     method: 'POST',
-    body: JSON.stringify({ startUrl, maxPages }),
+    body: JSON.stringify({ startUrl, maxPages, auth }),
   });
 }

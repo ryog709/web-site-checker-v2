@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { TabType, CheckResult, Issue, Heading, ImageInfo } from '../types/index.js';
+import type { TabType, CheckResult, Issue, Heading, ImageInfo, BasicAuth } from '../types/index.js';
 import { ExternalLink, AlertTriangle, AlertCircle, Info, Image as ImageIcon, FileText, Eye } from 'lucide-react';
 import { Modal } from './Modal.js';
 import { getProxiedImageUrl, isValidImageUrl } from '../utils/imageUtils.js';
@@ -9,6 +9,7 @@ interface TabContentProps {
   issues: CheckResult['issues'];
   isCrawlResult: boolean;
   allResults: CheckResult[];
+  auth?: BasicAuth;
 }
 
 export const TabContent: React.FC<TabContentProps> = ({
@@ -16,6 +17,7 @@ export const TabContent: React.FC<TabContentProps> = ({
   issues,
   isCrawlResult,
   allResults,
+  auth,
 }) => {
   const [selectedIssue, setSelectedIssue] = useState<any>(null);
 
@@ -85,7 +87,7 @@ export const TabContent: React.FC<TabContentProps> = ({
                           <div key={imgIndex} className="image-container-horizontal">
                             {isValidImageUrl(img.src) ? (
                               <img 
-                                src={getProxiedImageUrl(img.src)} 
+                                src={getProxiedImageUrl(img.src, auth)} 
                                 alt={img.alt || '画像'}
                                 className="preview-image-horizontal"
                                 onError={(e) => {
@@ -149,7 +151,7 @@ export const TabContent: React.FC<TabContentProps> = ({
               <div className="image-preview-container">
                 {isValidImageUrl(image.src) ? (
                   <img 
-                    src={getProxiedImageUrl(image.src)} 
+                    src={getProxiedImageUrl(image.src, auth)} 
                     alt={image.alt || `画像 ${image.index}`}
                     className="image-preview-full"
                     onError={(e) => {
@@ -266,7 +268,7 @@ export const TabContent: React.FC<TabContentProps> = ({
                 <div className="issue-image-preview">
                   {isValidImageUrl(issue.src) ? (
                     <img 
-                      src={getProxiedImageUrl(issue.src)} 
+                      src={getProxiedImageUrl(issue.src, auth)} 
                       alt="問題のある画像"
                       className="issue-preview-image"
                       onError={(e) => {

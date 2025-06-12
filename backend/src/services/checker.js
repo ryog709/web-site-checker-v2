@@ -6,9 +6,10 @@ import * as cheerio from 'cheerio';
 /**
  * 単一ページの診断を実行
  * @param {string} url - 診断するURL
+ * @param {Object} auth - ベーシック認証情報 (オプション)
  * @returns {Object} 診断結果
  */
-export async function checkSinglePage(url) {
+export async function checkSinglePage(url, auth = null) {
     // グローバル変数として現在のURLを保存（画像URL解決用）
     global.currentUrl = url;
     
@@ -37,6 +38,14 @@ export async function checkSinglePage(url) {
     try {
         const page = await browser.newPage();
 
+        // ベーシック認証の設定
+        if (auth && auth.username && auth.password) {
+            await page.authenticate({
+                username: auth.username,
+                password: auth.password
+            });
+        }
+
         // ページアクセス
         await page.goto(url, {
             waitUntil: 'networkidle2'
@@ -44,8 +53,7 @@ export async function checkSinglePage(url) {
 
         // 並列実行で診断を高速化
         const [lighthouseResults, axeResults, domAnalysis] = await Promise.all([
-            // runLighthouse(url), // 一時的に無効化
-            Promise.resolve({ scores: {}, accessibility: [] }), // ダミーデータ
+            runLighthouse(url),
             runAxeCore(page),
             analyzeDom(page)
         ]);
@@ -60,7 +68,8 @@ export async function checkSinglePage(url) {
                     lighthouse: lighthouseResults.accessibility,
                     axe: axeResults
                 }
-            }
+            },
+            auth: auth // 認証情報を結果に含める
         };
     } finally {
         await browser.close();
@@ -73,8 +82,8 @@ export async function checkSinglePage(url) {
  * @param {number} maxPages - 最大ページ数
  * @returns {Object} クロール結果
  */
-export async function crawlSite(startUrl, maxPages = 30) {
-    const urls = await discoverUrls(startUrl, maxPages);
+export async function crawlSite(startUrl, maxPages = 30, auth = null) {
+    const urls = await discoverUrls(startUrl, maxPages, auth);
     const results = [];
 
     console.log(`🔍 Discovered ${urls.length} pages to analyze`);
@@ -84,7 +93,7 @@ export async function crawlSite(startUrl, maxPages = 30) {
     for (let i = 0; i < urls.length; i += concurrency) {
         const batch = urls.slice(i, i + concurrency);
         const batchPromises = batch.map(url =>
-            checkSinglePage(url).catch(error => ({
+            checkSinglePage(url, auth).catch(error => ({
                 url,
                 error: error.message,
                 timestamp: new Date().toISOString()
@@ -101,7 +110,8 @@ export async function crawlSite(startUrl, maxPages = 30) {
         startUrl,
         totalPages: results.length,
         timestamp: new Date().toISOString(),
-        results
+        results,
+        auth: auth // 認証情報を結果に含める
     };
 }
 
@@ -544,7 +554,7 @@ function analyzeMeta($) {
  * @param {number} maxPages - 最大ページ数
  * @returns {Array} 発見されたURL一覧
  */
-async function discoverUrls(startUrl, maxPages) {
+async function discoverUrls(startUrl, maxPages, auth = null) {
     const browser = await puppeteer.launch({
         headless: 'new',
         executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
@@ -582,6 +592,15 @@ async function discoverUrls(startUrl, maxPages) {
 
             try {
                 const page = await browser.newPage();
+                
+                // ベーシック認証の設定
+                if (auth && auth.username && auth.password) {
+                    await page.authenticate({
+                        username: auth.username,
+                        password: auth.password
+                    });
+                }
+                
                 await page.goto(currentUrl, {
                     waitUntil: 'networkidle2',
                     timeout: 30000

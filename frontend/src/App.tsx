@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { CheckResult, CrawlResult } from './types/index.js';
+import type { CheckResult, CrawlResult, BasicAuth } from './types/index.js';
 import { checkSinglePage, crawlSite, ApiError } from './utils/api.js';
 import { UrlForm } from './components/UrlForm.js';
 import { Dashboard } from './components/Dashboard.js';
@@ -11,13 +11,13 @@ function App() {
   const [result, setResult] = useState<CheckResult | CrawlResult | null>(null);
   const [error, setError] = useState<string>('');
 
-  const handleSingleCheck = async (url: string) => {
+  const handleSingleCheck = async (url: string, auth?: BasicAuth) => {
     setIsLoading(true);
     setError('');
     setResult(null);
 
     try {
-      const checkResult = await checkSinglePage(url);
+      const checkResult = await checkSinglePage(url, auth);
       setResult(checkResult);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -30,13 +30,13 @@ function App() {
     }
   };
 
-  const handleCrawl = async (startUrl: string, maxPages: number) => {
+  const handleCrawl = async (startUrl: string, maxPages: number, auth?: BasicAuth) => {
     setIsLoading(true);
     setError('');
     setResult(null);
 
     try {
-      const crawlResult = await crawlSite(startUrl, maxPages);
+      const crawlResult = await crawlSite(startUrl, maxPages, auth);
       setResult(crawlResult);
     } catch (err) {
       if (err instanceof ApiError) {

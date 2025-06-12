@@ -2,14 +2,17 @@
  * 画像表示に関するユーティリティ関数
  */
 
+import type { BasicAuth } from '../types/index.js';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 /**
  * 外部画像URLをプロキシ経由で表示するURLに変換
  * @param originalUrl - 元の画像URL
+ * @param auth - ベーシック認証情報（オプション）
  * @returns プロキシ経由のURL
  */
-export function getProxiedImageUrl(originalUrl: string): string {
+export function getProxiedImageUrl(originalUrl: string, auth?: BasicAuth): string {
   if (!originalUrl || originalUrl === 'undefined') {
     return '';
   }
@@ -27,7 +30,16 @@ export function getProxiedImageUrl(originalUrl: string): string {
   }
 
   // プロキシ経由のURLを生成
-  return `${API_BASE_URL}/api/proxy-image?url=${encodeURIComponent(originalUrl)}`;
+  let proxyUrl = `${API_BASE_URL}/api/proxy-image?url=${encodeURIComponent(originalUrl)}`;
+  
+  // ベーシック認証情報があれば追加
+  if (auth && auth.username && auth.password) {
+    const authString = `${auth.username}:${auth.password}`;
+    const encodedAuth = btoa(authString); // Base64エンコード
+    proxyUrl += `&auth=${encodeURIComponent(encodedAuth)}`;
+  }
+  
+  return proxyUrl;
 }
 
 /**

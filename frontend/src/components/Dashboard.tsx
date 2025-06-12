@@ -114,6 +114,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ result }) => {
             issues={data.issues}
             isCrawlResult={isCrawlResult}
             allResults={isCrawlResult ? result.results : [data]}
+            auth={result.auth}
           />
         </div>
       </div>
