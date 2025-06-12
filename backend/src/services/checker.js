@@ -53,7 +53,7 @@ export async function checkSinglePage(url, auth = null) {
 
         // 並列実行で診断を高速化
         const [lighthouseResults, axeResults, domAnalysis] = await Promise.all([
-            runLighthouse(url),
+            runLighthouse(url, auth, browser),
             runAxeCore(page),
             analyzeDom(page)
         ]);
@@ -116,67 +116,158 @@ export async function crawlSite(startUrl, maxPages = 30, auth = null) {
 }
 
 /**
- * Lighthouse診断を実行
+ * Lighthouse診断を実行（Puppeteerブラウザを使用）
  * @param {string} url - 診断するURL
+ * @param {Object} auth - ベーシック認証情報
+ * @param {Object} browser - Puppeteerブラウザインスタンス
  * @returns {Object} Lighthouse結果
  */
-async function runLighthouse(url) {
-    const {
-        lhr
-    } = await lighthouse(url, {
-        onlyCategories: ['performance', 'accessibility', 'best-practices', 'seo', 'pwa'],
-        settings: {
-            maxWaitForFcp: 15 * 1000,
-            maxWaitForLoad: 35 * 1000,
-            formFactor: 'desktop',
-            throttling: {
-                rttMs: 40,
-                throughputKbps: 10240,
-                cpuSlowdownMultiplier: 1,
-                requestLatencyMs: 0,
-                downloadThroughputKbps: 0,
-                uploadThroughputKbps: 0
-            },
-            screenEmulation: {
-                mobile: false,
-                width: 1350,
-                height: 940,
-                deviceScaleFactor: 1,
-                disabled: false,
-            }
-        }
-    });
+async function runLighthouse(url, auth = null, browser = null) {
+    try {
+        // Puppeteerブラウザが提供されている場合はそれを使用
+        if (browser) {
+            const endpoint = browser.wsEndpoint();
+            const {
+                lhr
+            } = await lighthouse(url, {
+                onlyCategories: ['performance', 'accessibility', 'best-practices', 'seo', 'pwa'],
+                settings: {
+                    maxWaitForFcp: 15 * 1000,
+                    maxWaitForLoad: 35 * 1000,
+                    formFactor: 'desktop',
+                    throttling: {
+                        rttMs: 40,
+                        throughputKbps: 10240,
+                        cpuSlowdownMultiplier: 1,
+                        requestLatencyMs: 0,
+                        downloadThroughputKbps: 0,
+                        uploadThroughputKbps: 0
+                    },
+                    screenEmulation: {
+                        mobile: false,
+                        width: 1350,
+                        height: 940,
+                        deviceScaleFactor: 1,
+                        disabled: false,
+                    },
+                    // ベーシック認証が必要な場合
+                    ...(auth && auth.username && auth.password && {
+                        extraHeaders: {
+                            'Authorization': `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`
+                        }
+                    })
+                }
+            }, {
+                port: new URL(endpoint).port
+            });
 
-    // スコアを0-100スケールに変換
-    const scores = {
-        performance: Math.round((lhr.categories.performance?.score || 0) * 100),
-        accessibility: Math.round((lhr.categories.accessibility?.score || 0) * 100),
-        bestpractices: Math.round((lhr.categories['best-practices']?.score || 0) * 100),
-        seo: Math.round((lhr.categories.seo?.score || 0) * 100),
-        pwa: Math.round((lhr.categories.pwa?.score || 0) * 100)
-    };
+            // スコアを0-100スケールに変換
+            const scores = {
+                performance: Math.round((lhr.categories.performance?.score || 0) * 100),
+                accessibility: Math.round((lhr.categories.accessibility?.score || 0) * 100),
+                bestpractices: Math.round((lhr.categories['best-practices']?.score || 0) * 100),
+                seo: Math.round((lhr.categories.seo?.score || 0) * 100),
+                pwa: Math.round((lhr.categories.pwa?.score || 0) * 100)
+            };
 
-    // アクセシビリティの失敗項目のみ抽出
-    const accessibilityIssues = [];
-    if (lhr.categories.accessibility?.auditRefs) {
-        for (const auditRef of lhr.categories.accessibility.auditRefs) {
-            const audit = lhr.audits[auditRef.id];
-            if (audit && audit.score !== null && audit.score < 1) {
-                accessibilityIssues.push({
-                    id: audit.id,
-                    title: audit.title,
-                    description: audit.description,
-                    score: audit.score,
-                    displayValue: audit.displayValue
-                });
+            // アクセシビリティの失敗項目のみ抽出
+            const accessibilityIssues = [];
+            if (lhr.categories.accessibility?.auditRefs) {
+                for (const auditRef of lhr.categories.accessibility.auditRefs) {
+                    const audit = lhr.audits[auditRef.id];
+                    if (audit && audit.score !== null && audit.score < 1) {
+                        accessibilityIssues.push({
+                            id: audit.id,
+                            title: audit.title,
+                            description: audit.description,
+                            score: audit.score,
+                            displayValue: audit.displayValue
+                        });
+                    }
+                }
             }
+
+            return {
+                scores,
+                accessibility: accessibilityIssues
+            };
         }
+    } catch (error) {
+        console.warn('Lighthouse analysis failed:', error.message);
     }
+    
+    // フォールバック: 基本的なメトリクスから簡易スコアを算出
+    return await calculateBasicScores(url, browser);
+}
 
-    return {
-        scores,
-        accessibility: accessibilityIssues
-    };
+/**
+ * 基本的なメトリクスから簡易スコアを算出
+ * @param {string} url - 対象URL
+ * @param {Object} browser - Puppeteerブラウザインスタンス
+ * @returns {Object} 簡易スコア
+ */
+async function calculateBasicScores(url, browser) {
+    try {
+        const page = await browser.newPage();
+        
+        // パフォーマンスメトリクスを測定
+        const start = Date.now();
+        await page.goto(url, { waitUntil: 'networkidle2' });
+        const loadTime = Date.now() - start;
+        
+        // 基本的なメトリクスを取得
+        const metrics = await page.evaluate(() => {
+            return {
+                // SEO関連
+                hasTitle: !!document.querySelector('title')?.textContent?.trim(),
+                hasDescription: !!document.querySelector('meta[name="description"]'),
+                hasH1: !!document.querySelector('h1'),
+                
+                // アクセシビリティ関連
+                imagesWithoutAlt: document.querySelectorAll('img:not([alt])').length,
+                totalImages: document.querySelectorAll('img').length,
+                
+                // パフォーマンス関連
+                resourceCount: performance.getEntriesByType('resource').length,
+                
+                // PWA関連
+                hasManifest: !!document.querySelector('link[rel="manifest"]'),
+                hasServiceWorker: 'serviceWorker' in navigator
+            };
+        });
+        
+        await page.close();
+        
+        // スコア算出（0-100）
+        const performance = Math.max(0, 100 - Math.floor(loadTime / 50)); // 5秒で0点
+        const accessibility = Math.max(0, 100 - (metrics.imagesWithoutAlt * 10));
+        const seo = (metrics.hasTitle ? 40 : 0) + (metrics.hasDescription ? 40 : 0) + (metrics.hasH1 ? 20 : 0);
+        const bestpractices = Math.max(0, 100 - Math.max(0, metrics.resourceCount - 50)); // 50リソース超で減点
+        const pwa = (metrics.hasManifest ? 50 : 0) + (metrics.hasServiceWorker ? 50 : 0);
+        
+        return {
+            scores: {
+                performance,
+                accessibility,
+                bestpractices,
+                seo,
+                pwa
+            },
+            accessibility: []
+        };
+    } catch (error) {
+        console.warn('Basic score calculation failed:', error.message);
+        return {
+            scores: {
+                performance: 0,
+                accessibility: 0,
+                bestpractices: 0,
+                seo: 0,
+                pwa: 0
+            },
+            accessibility: []
+        };
+    }
 }
 
 /**

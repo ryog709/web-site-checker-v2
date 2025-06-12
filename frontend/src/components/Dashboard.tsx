@@ -15,6 +15,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ result }) => {
 
   const isCrawlResult = 'results' in result;
   const data = isCrawlResult ? result.results[0] : result;
+  
+  // スコアにデフォルト値を設定
+  const scores = {
+    performance: data?.scores?.performance ?? 0,
+    accessibility: data?.scores?.accessibility ?? 0,
+    bestpractices: data?.scores?.bestpractices ?? 0,
+    seo: data?.scores?.seo ?? 0,
+    pwa: data?.scores?.pwa ?? 0
+  };
 
   if (!data || data.error) {
     return (
@@ -65,27 +74,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ result }) => {
             <h3>Lighthouseスコア</h3>
             <div className="score-rings">
               <ScoreRing
-                score={data.scores.performance}
+                score={scores.performance}
                 label="Performance"
                 color="--score-performance"
               />
               <ScoreRing
-                score={data.scores.accessibility}
+                score={scores.accessibility}
                 label="Accessibility"
                 color="--score-accessibility"
               />
               <ScoreRing
-                score={data.scores.bestpractices}
+                score={scores.bestpractices}
                 label="Best Practices"
                 color="--score-best-practices"
               />
               <ScoreRing
-                score={data.scores.seo}
+                score={scores.seo}
                 label="SEO"
                 color="--score-seo"
               />
               <ScoreRing
-                score={data.scores.pwa}
+                score={scores.pwa}
                 label="PWA"
                 color="--score-pwa"
               />

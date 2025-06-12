@@ -89,8 +89,7 @@ router.get('/proxy-image', async (req, res) => {
     // ベーシック認証が必要な場合
     if (auth) {
       try {
-        // Base64でエンコードされた認証情報をデコード
-        const decodedAuth = Buffer.from(auth, 'base64').toString('utf-8');
+        // Base64でエンコードされた認証情報を使用
         headers['Authorization'] = `Basic ${auth}`;
       } catch (e) {
         console.warn('Invalid auth parameter:', e.message);
