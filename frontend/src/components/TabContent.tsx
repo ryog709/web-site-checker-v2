@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { TabType, CheckResult, Issue, Heading, ImageInfo, BasicAuth } from '../types/index.js';
+import type { TabType, CheckResult, Issue, Heading, ImageInfo, BasicAuth, MetaInfo } from '../types/index.js';
 import { ExternalLink, AlertTriangle, AlertCircle, Info, Image as ImageIcon, FileText, Eye } from 'lucide-react';
 import { Modal } from './Modal.js';
 import { getProxiedImageUrl, isValidImageUrl } from '../utils/imageUtils.js';
@@ -398,7 +398,7 @@ export const TabContent: React.FC<TabContentProps> = ({
             <div className="section-header">
               <div className="section-title">
                 <div className="axe-icon">🪓</div>
-                <h4>WCAG 2.1 AA準拠チェック</h4>
+                <h4>WCAG 2.2 AA準拠チェック</h4>
                 <span className="count-badge error">{axe.length}</span>
               </div>
             </div>
@@ -435,7 +435,7 @@ export const TabContent: React.FC<TabContentProps> = ({
           <div className="no-issues">
             <div className="accessibility-checklist">
               <div className="success-icon">🎉</div>
-              <h3>アクセシビリティ診断結果（WCAG 2.1 AA）</h3>
+              <h3>アクセシビリティ診断結果（WCAG 2.2 AA）</h3>
               <div className="checklist">
                 <div className="checklist-item">
                   <span className="check-icon">✅</span>
@@ -455,21 +455,146 @@ export const TabContent: React.FC<TabContentProps> = ({
                 </div>
                 <div className="checklist-item">
                   <span className="check-icon">✅</span>
+                  <span>フォーカス時に要素が隠れないよう適切に表示されます</span>
+                </div>
+                <div className="checklist-item">
+                  <span className="check-icon">✅</span>
+                  <span>タッチターゲットのサイズが十分確保されています（24px以上）</span>
+                </div>
+                <div className="checklist-item">
+                  <span className="check-icon">✅</span>
+                  <span>ドラッグ操作に代替手段が提供されています</span>
+                </div>
+                <div className="checklist-item">
+                  <span className="check-icon">✅</span>
+                  <span>認証に認知的負荷の少ない方法が提供されています</span>
+                </div>
+                <div className="checklist-item">
+                  <span className="check-icon">✅</span>
+                  <span>同じ情報の重複入力が回避されています</span>
+                </div>
+                <div className="checklist-item">
+                  <span className="check-icon">✅</span>
+                  <span>ヘルプ機能の配置が一貫しています</span>
+                </div>
+                <div className="checklist-item">
+                  <span className="check-icon">✅</span>
                   <span>aria属性は適切に使用されています</span>
                 </div>
                 <div className="checklist-item">
                   <span className="check-icon">✅</span>
                   <span>ページ構造がセマンティックに記述されています</span>
                 </div>
-                <div className="checklist-item">
-                  <span className="check-icon">✅</span>
-                  <span>リンクテキストが適切に設定されています</span>
-                </div>
-                <div className="checklist-item">
-                  <span className="check-icon">✅</span>
-                  <span>見出しが階層的に構造化されています</span>
-                </div>
               </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderMetaInfo = (metaIssues: Issue[], allMeta: MetaInfo[]) => {
+    return (
+      <div className="meta-info-section">
+        {/* メタ情報の詳細表示 */}
+        {allMeta.length > 0 && (
+          <div className="meta-details">
+            <div className="section-header">
+              <div className="section-title">
+                <FileText size={20} />
+                <h4>メタ情報の詳細</h4>
+              </div>
+            </div>
+            
+            <div className="meta-grid">
+              {allMeta.map((meta, index) => (
+                <div key={index} className="meta-item">
+                  <div className="meta-item-header">
+                    <span className={`meta-type-badge ${meta.type}`}>
+                      {meta.type === 'title' && '📄'}
+                      {meta.type === 'description' && '📝'}
+                      {meta.type === 'viewport' && '📱'}
+                      {meta.type === 'og' && '🌐'}
+                      {meta.type === 'twitter' && '🐦'}
+                      {meta.type === 'other' && '🔧'}
+                    </span>
+                    <strong>{meta.name}</strong>
+                    {meta.length && (
+                      <span className={`length-badge ${meta.length > 60 ? 'long' : meta.length < 30 ? 'short' : 'good'}`}>
+                        {meta.length}文字
+                      </span>
+                    )}
+                  </div>
+                  <div className="meta-content">
+                    {meta.content}
+                  </div>
+                  {meta.property && (
+                    <div className="meta-property">
+                      {meta.property}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 問題がある場合の表示 */}
+        {metaIssues.length > 0 && (
+          <div className="meta-issues">
+            <div className="section-header">
+              <div className="section-title">
+                <AlertTriangle size={20} />
+                <h4>メタ情報の問題</h4>
+                <span className="count-badge error">{metaIssues.length}</span>
+              </div>
+            </div>
+
+            <div className="issues-grid">
+              {metaIssues.map((issue, index) => (
+                <div key={index} className="issue-card modern">
+                  <div className="issue-header">
+                    <div className="issue-icon">
+                      {issue.severity === 'error' && <AlertTriangle size={16} />}
+                      {issue.severity === 'warning' && <AlertCircle size={16} />}
+                      {issue.severity === 'info' && <Info size={16} />}
+                    </div>
+                    <div className="issue-title">
+                      <span className="issue-type">{issue.type}</span>
+                      {issue.element && <span className="issue-element">{issue.element}</span>}
+                    </div>
+                    <div className={`severity-badge ${issue.severity}`}>
+                      {issue.severity === 'error' && 'エラー'}
+                      {issue.severity === 'warning' && '警告'}
+                      {issue.severity === 'info' && '情報'}
+                    </div>
+                  </div>
+                  <div className="issue-message">
+                    {issue.message}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 問題もメタ情報もない場合 */}
+        {metaIssues.length === 0 && allMeta.length === 0 && (
+          <div className="no-issues">
+            <div className="success-state">
+              <div className="success-icon">❓</div>
+              <h3>メタ情報が見つかりません</h3>
+              <p>ページにメタ情報が設定されていないか、取得できませんでした</p>
+            </div>
+          </div>
+        )}
+
+        {/* 問題がなく、メタ情報がある場合 */}
+        {metaIssues.length === 0 && allMeta.length > 0 && (
+          <div className="meta-success">
+            <div className="success-message">
+              <span className="success-icon">✅</span>
+              <span>メタ情報は適切に設定されています</span>
             </div>
           </div>
         )}
@@ -497,7 +622,7 @@ export const TabContent: React.FC<TabContentProps> = ({
       case 'links':
         return renderIssueTable(issues.links, 'リンク');
       case 'meta':
-        return renderIssueTable(issues.meta, 'メタ情報');
+        return renderMetaInfo(issues.meta, issues.allMeta || []);
       case 'accessibility':
         return renderAccessibilityIssues();
       default:

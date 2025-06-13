@@ -65,6 +65,14 @@ export interface AxeViolation {
   nodes: number;
 }
 
+export interface MetaInfo {
+  type: string;
+  name: string;
+  content: string;
+  length?: number;
+  property?: string;
+}
+
 export interface CheckResult {
   url: string;
   timestamp: string;
@@ -76,6 +84,7 @@ export interface CheckResult {
     allImages: ImageInfo[]; // 全ての画像情報を追加
     links: Issue[];
     meta: Issue[];
+    allMeta: MetaInfo[]; // 全てのメタ情報を追加
     accessibility: {
       lighthouse: LighthouseIssue[];
       axe: AxeViolation[];

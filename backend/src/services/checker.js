@@ -271,7 +271,7 @@ async function calculateBasicScores(url, browser) {
 }
 
 /**
- * axe-core による WCAG 2.1 AA 診断
+ * axe-core による WCAG 2.2 AA 診断
  * @param {Object} page - Puppeteer page instance
  * @returns {Array} axe違反結果
  */
@@ -315,7 +315,8 @@ async function analyzeDom(page) {
         images: analyzeImages($),
         allImages: getAllImages($), // 全ての画像情報を追加
         links: analyzeLinks($),
-        meta: analyzeMeta($)
+        meta: analyzeMeta($),
+        allMeta: getAllMeta($) // 全てのメタ情報を追加
     };
 }
 
@@ -637,6 +638,116 @@ function analyzeMeta($) {
     }
 
     return issues;
+}
+
+/**
+ * 全てのメタ情報を取得
+ * @param {Object} $ - Cheerio instance
+ * @returns {Array} メタ情報一覧
+ */
+function getAllMeta($) {
+    const metaInfo = [];
+
+    // titleタグ
+    const title = $('title').text().trim();
+    if (title) {
+        metaInfo.push({
+            type: 'title',
+            name: 'ページタイトル',
+            content: title,
+            length: title.length
+        });
+    }
+
+    // meta description
+    const description = $('meta[name="description"]').attr('content');
+    if (description) {
+        metaInfo.push({
+            type: 'description',
+            name: 'ページ説明',
+            content: description.trim(),
+            length: description.trim().length
+        });
+    }
+
+    // meta viewport
+    const viewport = $('meta[name="viewport"]').attr('content');
+    if (viewport) {
+        metaInfo.push({
+            type: 'viewport',
+            name: 'ビューポート設定',
+            content: viewport.trim()
+        });
+    }
+
+    // Open Graphタグ
+    const ogTags = [
+        { property: 'og:title', name: 'OG タイトル' },
+        { property: 'og:description', name: 'OG 説明' },
+        { property: 'og:image', name: 'OG 画像' },
+        { property: 'og:url', name: 'OG URL' },
+        { property: 'og:type', name: 'OG タイプ' },
+        { property: 'og:site_name', name: 'OG サイト名' }
+    ];
+
+    ogTags.forEach(tag => {
+        const content = $(`meta[property="${tag.property}"]`).attr('content');
+        if (content) {
+            metaInfo.push({
+                type: 'og',
+                name: tag.name,
+                content: content.trim(),
+                property: tag.property
+            });
+        }
+    });
+
+    // Twitter Cardタグ
+    const twitterTags = [
+        { name: 'twitter:card', displayName: 'Twitter カード' },
+        { name: 'twitter:title', displayName: 'Twitter タイトル' },
+        { name: 'twitter:description', displayName: 'Twitter 説明' },
+        { name: 'twitter:image', displayName: 'Twitter 画像' }
+    ];
+
+    twitterTags.forEach(tag => {
+        const content = $(`meta[name="${tag.name}"]`).attr('content');
+        if (content) {
+            metaInfo.push({
+                type: 'twitter',
+                name: tag.displayName,
+                content: content.trim(),
+                property: tag.name
+            });
+        }
+    });
+
+    // その他の重要なmetaタグ
+    const otherMeta = [
+        { name: 'keywords', displayName: 'キーワード' },
+        { name: 'author', displayName: '著者' },
+        { name: 'robots', displayName: 'ロボット指示' },
+        { name: 'canonical', displayName: '正規URL', selector: 'link[rel="canonical"]', attr: 'href' }
+    ];
+
+    otherMeta.forEach(meta => {
+        let content;
+        if (meta.selector) {
+            content = $(meta.selector).attr(meta.attr);
+        } else {
+            content = $(`meta[name="${meta.name}"]`).attr('content');
+        }
+        
+        if (content) {
+            metaInfo.push({
+                type: 'other',
+                name: meta.displayName,
+                content: content.trim()
+            });
+        }
+    });
+
+    return metaInfo;
 }
 
 /**
