@@ -58,6 +58,9 @@ export async function checkSinglePage(url, auth = null) {
             analyzeDom(page)
         ]);
 
+        // 同じドメインの他のページリンクを収集
+        const siteLinks = await collectSiteLinks(page, url);
+
         return {
             url,
             timestamp: new Date().toISOString(),
@@ -69,6 +72,7 @@ export async function checkSinglePage(url, auth = null) {
                     axe: axeResults
                 }
             },
+            siteLinks, // 他ページへのリンク一覧を追加
             auth: auth // 認証情報を結果に含める
         };
     } finally {
@@ -1097,6 +1101,126 @@ async function discoverUrls(startUrl, auth = null) {
         return discovered;
     } finally {
         await browser.close();
+    }
+}
+
+/**
+ * ページから同じドメインの他のページリンクを収集
+ * @param {Object} page - Puppeteer page instance
+ * @param {string} currentUrl - 現在のページURL
+ * @returns {Array} サイト内リンク一覧
+ */
+async function collectSiteLinks(page, currentUrl) {
+    try {
+        const currentDomain = new URL(currentUrl).hostname;
+        
+        // ページ内のリンクを取得
+        const links = await page.evaluate(() => {
+            return Array.from(document.querySelectorAll('a[href]'))
+                .map(a => ({
+                    href: a.href,
+                    text: a.textContent?.trim() || '',
+                    title: a.title || ''
+                }))
+                .filter(link => link.href.startsWith('http'));
+        });
+
+        const siteLinks = [];
+        const seen = new Set();
+
+        for (const link of links) {
+            try {
+                const linkUrl = new URL(link.href);
+                
+                // 同一ドメインかチェック
+                if (linkUrl.hostname !== currentDomain) continue;
+                
+                // 現在のページは除外
+                if (link.href === currentUrl) continue;
+                
+                // URLを正規化
+                const normalizedUrl = linkUrl.origin + linkUrl.pathname;
+                
+                // 不要なファイル拡張子を除外
+                const excludeExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.svg', '.ico', '.css', '.js', '.xml', '.txt', '.zip'];
+                const hasExcludedExtension = excludeExtensions.some(ext => 
+                    normalizedUrl.toLowerCase().endsWith(ext)
+                );
+                if (hasExcludedExtension) continue;
+                
+                // 特殊なパスを除外
+                const excludePatterns = [
+                    '/wp-admin/', '/admin/', '/login', '/logout',
+                    '/search', '/contact', '/mailto:', '/tel:',
+                    '/feed', '/rss', '/api/', '/.well-known/'
+                ];
+                const hasExcludedPattern = excludePatterns.some(pattern => 
+                    normalizedUrl.toLowerCase().includes(pattern)
+                );
+                if (hasExcludedPattern) continue;
+                
+                // WordPressのページネーションと特殊URLパターンを除外
+                const path = linkUrl.pathname;
+                const wpExcludePatterns = [
+                    /\/page\/\d+/i,
+                    /\/paged\/\d+/i,
+                    /\/category\//i,
+                    /\/tag\//i,
+                    /\/author\//i,
+                    /\/\d{4}\/\d{2}\//i,
+                    /\/\d{4}\/$/i,
+                    /\/trackback/i,
+                    /\/comment-page-\d+/i,
+                    /\/attachment\//i,
+                    /\/embed\//i,
+                    /\/wp-content\//i,
+                    /\/wp-includes\//i,
+                    /\/xmlrpc\.php/i,
+                    /\/wp-sitemap/i
+                ];
+                
+                const hasWpExcludedPattern = wpExcludePatterns.some(pattern => 
+                    pattern.test(path)
+                );
+                if (hasWpExcludedPattern) continue;
+                
+                // URLエンコードされた日本語を除外
+                const hasEncodedChars = /%[0-9a-f]{2}/i.test(path);
+                if (hasEncodedChars) {
+                    const hasJapaneseEncoding = /%e[0-9a-f]|%8[0-9a-f]|%9[0-9a-f]/i.test(path);
+                    if (hasJapaneseEncoding) continue;
+                    
+                    const encodedMatches = path.match(/%[0-9a-f]{2}/gi);
+                    if (encodedMatches && encodedMatches.length > 2) continue;
+                }
+                
+                // 末尾のスラッシュを統一
+                const finalUrl = normalizedUrl.endsWith('/') && normalizedUrl !== linkUrl.origin + '/' 
+                    ? normalizedUrl.slice(0, -1) 
+                    : normalizedUrl;
+                
+                // 重複チェック
+                if (!seen.has(finalUrl)) {
+                    seen.add(finalUrl);
+                    siteLinks.push({
+                        url: finalUrl,
+                        text: link.text.substring(0, 100), // テキストを100文字に制限
+                        title: link.title.substring(0, 100)
+                    });
+                }
+                
+                // 最大20個まで
+                if (siteLinks.length >= 20) break;
+                
+            } catch (e) {
+                // 無効なURLは無視
+            }
+        }
+        
+        return siteLinks;
+    } catch (error) {
+        console.warn('Failed to collect site links:', error.message);
+        return [];
     }
 }
 

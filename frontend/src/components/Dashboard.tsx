@@ -8,9 +8,10 @@ import { Calendar, Clock, Globe } from 'lucide-react';
 
 interface DashboardProps {
   result: CheckResult | CrawlResult;
+  onCheckPage?: (url: string) => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ result }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => {
   const [activeTab, setActiveTab] = useState<TabType>('headings');
   const [selectedPageUrl, setSelectedPageUrl] = useState<string | null>(null);
 
@@ -191,6 +192,49 @@ export const Dashboard: React.FC<DashboardProps> = ({ result }) => {
     );
   };
 
+  const renderSiteLinks = () => {
+    if (isCrawlResult || !data.siteLinks || data.siteLinks.length === 0) return null;
+    
+    return (
+      <div className="site-links-section">
+        <div className="section-header">
+          <div className="section-title">
+            <Globe size={20} />
+            <h4>このサイトの他のページ</h4>
+            <span className="count-badge info">{data.siteLinks.length}</span>
+          </div>
+        </div>
+        
+        <div className="site-links-grid">
+          {data.siteLinks.map((link, index) => (
+            <div 
+              key={index} 
+              className="site-link-item"
+              onClick={() => onCheckPage && onCheckPage(link.url)}
+            >
+              <div className="link-content">
+                <div className="link-text">
+                  {link.text || 'タイトルなし'}
+                </div>
+                {link.title && (
+                  <div className="link-title">
+                    {link.title}
+                  </div>
+                )}
+                <div className="link-url">
+                  {link.url}
+                </div>
+              </div>
+              <div className="link-action">
+                📊 診断する
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -290,6 +334,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ result }) => {
             </div>
           </>
         )}
+        
+        {/* サイトリンクセクション */}
+        {renderSiteLinks()}
       </div>
     </div>
   );

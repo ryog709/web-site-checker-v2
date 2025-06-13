@@ -136,7 +136,12 @@ function App() {
 
         {isLoading && <LoadingSpinner />}
 
-        {result && !isLoading && <Dashboard result={result} />}
+        {result && !isLoading && (
+          <Dashboard 
+            result={result} 
+            onCheckPage={handleSingleCheck}
+          />
+        )}
       </main>
     </div>
   );

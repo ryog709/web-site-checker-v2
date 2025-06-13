@@ -73,6 +73,12 @@ export interface MetaInfo {
   property?: string;
 }
 
+export interface SiteLink {
+  url: string;
+  text: string;
+  title: string;
+}
+
 export interface CheckResult {
   url: string;
   timestamp: string;
@@ -90,6 +96,7 @@ export interface CheckResult {
       axe: AxeViolation[];
     };
   };
+  siteLinks?: SiteLink[]; // 他ページへのリンク一覧を追加
   auth?: BasicAuth; // 使用された認証情報を保存
   error?: string;
 }

@@ -899,6 +899,97 @@ body {
   line-height: 1.5;
 }
 
+/* Site links section styles */
+.site-links-section {
+  margin-top: var(--spacing-2xl);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  border: 1px solid var(--color-border);
+}
+
+.site-links-section .section-header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.site-links-section .section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.site-links-section .section-title h4 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 1.125rem;
+}
+
+.site-links-grid {
+  display: grid;
+  gap: var(--spacing-md);
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+}
+
+.site-link-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.site-link-item:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.link-content {
+  flex: 1;
+  margin-right: var(--spacing-md);
+}
+
+.link-text {
+  font-weight: 500;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  margin-bottom: var(--spacing-xs);
+  line-height: 1.4;
+}
+
+.link-title {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-xs);
+  font-style: italic;
+}
+
+.link-url {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  word-break: break-all;
+  font-family: monospace;
+}
+
+.link-action {
+  background: var(--color-primary);
+  color: white;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 0.2s ease;
+}
+
+.site-link-item:hover .link-action {
+  background: var(--color-primary-hover);
+}
+
 /* Issues table */
 .issues-table-container {
   margin-bottom: var(--spacing-xl);
