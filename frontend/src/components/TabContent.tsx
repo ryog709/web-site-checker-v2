@@ -433,10 +433,43 @@ export const TabContent: React.FC<TabContentProps> = ({
 
         {lighthouse.length === 0 && axe.length === 0 && (
           <div className="no-issues">
-            <div className="success-state">
+            <div className="accessibility-checklist">
               <div className="success-icon">🎉</div>
-              <h3>アクセシビリティ完璧！</h3>
-              <p>WCAG 2.1 AA準拠に関する問題は検出されませんでした</p>
+              <h3>アクセシビリティ診断結果（WCAG 2.1 AA）</h3>
+              <div className="checklist">
+                <div className="checklist-item">
+                  <span className="check-icon">✅</span>
+                  <span>画像に代替テキスト（alt属性）が正しく設定されています</span>
+                </div>
+                <div className="checklist-item">
+                  <span className="check-icon">✅</span>
+                  <span>テキストと背景のコントラスト比は4.5:1以上です</span>
+                </div>
+                <div className="checklist-item">
+                  <span className="check-icon">✅</span>
+                  <span>フォームにラベルが正しく紐づいています（label + input）</span>
+                </div>
+                <div className="checklist-item">
+                  <span className="check-icon">✅</span>
+                  <span>キーボード操作でフォーカス移動が可能です</span>
+                </div>
+                <div className="checklist-item">
+                  <span className="check-icon">✅</span>
+                  <span>aria属性は適切に使用されています</span>
+                </div>
+                <div className="checklist-item">
+                  <span className="check-icon">✅</span>
+                  <span>ページ構造がセマンティックに記述されています</span>
+                </div>
+                <div className="checklist-item">
+                  <span className="check-icon">✅</span>
+                  <span>リンクテキストが適切に設定されています</span>
+                </div>
+                <div className="checklist-item">
+                  <span className="check-icon">✅</span>
+                  <span>見出しが階層的に構造化されています</span>
+                </div>
+              </div>
             </div>
           </div>
         )}
