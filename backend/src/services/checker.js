@@ -781,9 +781,16 @@ async function countPages(startUrl, auth = null) {
 
     try {
         const visited = new Set();
-        const toVisit = [startUrl];
+        // 開始URLを正規化
+        const startUrlObj = new URL(startUrl);
+        const normalizedStartUrl = startUrlObj.origin + startUrlObj.pathname;
+        const finalStartUrl = normalizedStartUrl.endsWith('/') && normalizedStartUrl !== startUrlObj.origin + '/' 
+            ? normalizedStartUrl.slice(0, -1) 
+            : normalizedStartUrl;
+            
+        const toVisit = [finalStartUrl];
         const discovered = [];
-        const startDomain = new URL(startUrl).hostname;
+        const startDomain = startUrlObj.hostname;
 
         // すべてのページを発見するまでクロール
         while (toVisit.length > 0) {
@@ -818,12 +825,89 @@ async function countPages(startUrl, auth = null) {
 
                 await page.close();
 
-                // 同一ドメインのリンクのみ追加
+                // 同一ドメインのリンクのみ追加（改善されたフィルタリング）
                 for (const link of links) {
                     try {
                         const linkUrl = new URL(link);
-                        if (linkUrl.hostname === startDomain && !visited.has(link) && !toVisit.includes(link)) {
-                            toVisit.push(link);
+                        
+                        // 同一ドメインかチェック
+                        if (linkUrl.hostname !== startDomain) continue;
+                        
+                        // URLを正規化（フラグメントとクエリパラメータを除去）
+                        const normalizedUrl = linkUrl.origin + linkUrl.pathname;
+                        
+                        // 不要なファイル拡張子を除外
+                        const excludeExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.svg', '.ico', '.css', '.js', '.xml', '.txt', '.zip', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'];
+                        const hasExcludedExtension = excludeExtensions.some(ext => 
+                            normalizedUrl.toLowerCase().endsWith(ext)
+                        );
+                        if (hasExcludedExtension) continue;
+                        
+                        // 特殊なパスを除外
+                        const excludePatterns = [
+                            '/wp-admin/', '/admin/', '/login', '/logout',
+                            '/search', '/contact', '/mailto:', '/tel:',
+                            '/feed', '/rss', '/api/', '/.well-known/'
+                        ];
+                        const hasExcludedPattern = excludePatterns.some(pattern => 
+                            normalizedUrl.toLowerCase().includes(pattern)
+                        );
+                        if (hasExcludedPattern) continue;
+                        
+                        // URLエンコードされた曖昧なスラッグを除外（特に日本語）
+                        const path = linkUrl.pathname;
+                        const hasEncodedChars = /%[0-9a-f]{2}/i.test(path);
+                        if (hasEncodedChars) {
+                            // %e3で始まるものは日本語のひらがな・カタカナ・漢字
+                            // %83や%82なども日本語の可能性が高い
+                            const hasJapaneseEncoding = /%e[0-9a-f]|%8[0-9a-f]|%9[0-9a-f]/i.test(path);
+                            if (hasJapaneseEncoding) continue;
+                            
+                            // その他のエンコード文字が多い場合も除外
+                            const encodedMatches = path.match(/%[0-9a-f]{2}/gi);
+                            if (encodedMatches && encodedMatches.length > 2) continue;
+                        }
+                        
+                        // WordPressのページネーションと特殊URLパターンを除外
+                        const wpExcludePatterns = [
+                            /\/page\/\d+/i,           // /page/2, /page/3 等
+                            /\/paged\/\d+/i,          // /paged/2 等
+                            /\/category\//i,          // カテゴリーアーカイブ
+                            /\/tag\//i,               // タグアーカイブ
+                            /\/author\//i,            // 作者アーカイブ
+                            /\/\d{4}\/\d{2}\//i,      // /2023/12/ 日付アーカイブ
+                            /\/\d{4}\/$/i,            // /2023/ 年アーカイブ
+                            /\/trackback/i,           // トラックバック
+                            /\/comment-page-\d+/i,    // コメントページネーション
+                            /\/attachment\//i,        // 添付ファイル
+                            /\/embed\//i,             // 埋め込み
+                            /\/wp-content\//i,        // WordPress コンテンツ
+                            /\/wp-includes\//i,       // WordPress インクルード
+                            /\/xmlrpc\.php/i,         // XML-RPC
+                            /\/wp-sitemap/i           // WordPressサイトマップ
+                        ];
+                        
+                        const hasWpExcludedPattern = wpExcludePatterns.some(pattern => 
+                            pattern.test(path)
+                        );
+                        if (hasWpExcludedPattern) continue;
+                        
+                        // クエリパラメータにページネーションが含まれている場合も除外
+                        const searchParams = linkUrl.searchParams;
+                        if (searchParams.has('page') || searchParams.has('paged') || 
+                            searchParams.has('p') || searchParams.has('cat') ||
+                            searchParams.has('tag') || searchParams.has('author')) {
+                            continue;
+                        }
+                        
+                        // 末尾のスラッシュを統一
+                        const finalUrl = normalizedUrl.endsWith('/') && normalizedUrl !== linkUrl.origin + '/' 
+                            ? normalizedUrl.slice(0, -1) 
+                            : normalizedUrl;
+                        
+                        // 重複チェック（正規化されたURLで）
+                        if (!visited.has(finalUrl) && !toVisit.includes(finalUrl)) {
+                            toVisit.push(finalUrl);
                         }
                     } catch (e) {
                         // 無効なURLは無視
@@ -874,9 +958,16 @@ async function discoverUrls(startUrl, auth = null) {
 
     try {
         const visited = new Set();
-        const toVisit = [startUrl];
+        // 開始URLを正規化
+        const startUrlObj = new URL(startUrl);
+        const normalizedStartUrl = startUrlObj.origin + startUrlObj.pathname;
+        const finalStartUrl = normalizedStartUrl.endsWith('/') && normalizedStartUrl !== startUrlObj.origin + '/' 
+            ? normalizedStartUrl.slice(0, -1) 
+            : normalizedStartUrl;
+            
+        const toVisit = [finalStartUrl];
         const discovered = [];
-        const startDomain = new URL(startUrl).hostname;
+        const startDomain = startUrlObj.hostname;
 
         while (toVisit.length > 0) {
             const currentUrl = toVisit.shift();
@@ -910,12 +1001,89 @@ async function discoverUrls(startUrl, auth = null) {
 
                 await page.close();
 
-                // 同一ドメインのリンクのみ追加
+                // 同一ドメインのリンクのみ追加（改善されたフィルタリング）
                 for (const link of links) {
                     try {
                         const linkUrl = new URL(link);
-                        if (linkUrl.hostname === startDomain && !visited.has(link) && !toVisit.includes(link)) {
-                            toVisit.push(link);
+                        
+                        // 同一ドメインかチェック
+                        if (linkUrl.hostname !== startDomain) continue;
+                        
+                        // URLを正規化（フラグメントとクエリパラメータを除去）
+                        const normalizedUrl = linkUrl.origin + linkUrl.pathname;
+                        
+                        // 不要なファイル拡張子を除外
+                        const excludeExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.svg', '.ico', '.css', '.js', '.xml', '.txt', '.zip', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'];
+                        const hasExcludedExtension = excludeExtensions.some(ext => 
+                            normalizedUrl.toLowerCase().endsWith(ext)
+                        );
+                        if (hasExcludedExtension) continue;
+                        
+                        // 特殊なパスを除外
+                        const excludePatterns = [
+                            '/wp-admin/', '/admin/', '/login', '/logout',
+                            '/search', '/contact', '/mailto:', '/tel:',
+                            '/feed', '/rss', '/api/', '/.well-known/'
+                        ];
+                        const hasExcludedPattern = excludePatterns.some(pattern => 
+                            normalizedUrl.toLowerCase().includes(pattern)
+                        );
+                        if (hasExcludedPattern) continue;
+                        
+                        // URLエンコードされた曖昧なスラッグを除外（特に日本語）
+                        const path = linkUrl.pathname;
+                        const hasEncodedChars = /%[0-9a-f]{2}/i.test(path);
+                        if (hasEncodedChars) {
+                            // %e3で始まるものは日本語のひらがな・カタカナ・漢字
+                            // %83や%82なども日本語の可能性が高い
+                            const hasJapaneseEncoding = /%e[0-9a-f]|%8[0-9a-f]|%9[0-9a-f]/i.test(path);
+                            if (hasJapaneseEncoding) continue;
+                            
+                            // その他のエンコード文字が多い場合も除外
+                            const encodedMatches = path.match(/%[0-9a-f]{2}/gi);
+                            if (encodedMatches && encodedMatches.length > 2) continue;
+                        }
+                        
+                        // WordPressのページネーションと特殊URLパターンを除外
+                        const wpExcludePatterns = [
+                            /\/page\/\d+/i,           // /page/2, /page/3 等
+                            /\/paged\/\d+/i,          // /paged/2 等
+                            /\/category\//i,          // カテゴリーアーカイブ
+                            /\/tag\//i,               // タグアーカイブ
+                            /\/author\//i,            // 作者アーカイブ
+                            /\/\d{4}\/\d{2}\//i,      // /2023/12/ 日付アーカイブ
+                            /\/\d{4}\/$/i,            // /2023/ 年アーカイブ
+                            /\/trackback/i,           // トラックバック
+                            /\/comment-page-\d+/i,    // コメントページネーション
+                            /\/attachment\//i,        // 添付ファイル
+                            /\/embed\//i,             // 埋め込み
+                            /\/wp-content\//i,        // WordPress コンテンツ
+                            /\/wp-includes\//i,       // WordPress インクルード
+                            /\/xmlrpc\.php/i,         // XML-RPC
+                            /\/wp-sitemap/i           // WordPressサイトマップ
+                        ];
+                        
+                        const hasWpExcludedPattern = wpExcludePatterns.some(pattern => 
+                            pattern.test(path)
+                        );
+                        if (hasWpExcludedPattern) continue;
+                        
+                        // クエリパラメータにページネーションが含まれている場合も除外
+                        const searchParams = linkUrl.searchParams;
+                        if (searchParams.has('page') || searchParams.has('paged') || 
+                            searchParams.has('p') || searchParams.has('cat') ||
+                            searchParams.has('tag') || searchParams.has('author')) {
+                            continue;
+                        }
+                        
+                        // 末尾のスラッシュを統一
+                        const finalUrl = normalizedUrl.endsWith('/') && normalizedUrl !== linkUrl.origin + '/' 
+                            ? normalizedUrl.slice(0, -1) 
+                            : normalizedUrl;
+                        
+                        // 重複チェック（正規化されたURLで）
+                        if (!visited.has(finalUrl) && !toVisit.includes(finalUrl)) {
+                            toVisit.push(finalUrl);
                         }
                     } catch (e) {
                         // 無効なURLは無視
