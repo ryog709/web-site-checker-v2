@@ -1,6 +1,6 @@
 import express from 'express';
 import fetch from 'node-fetch';
-import { checkSinglePage, crawlSite } from '../services/checker.js';
+import { checkSinglePage, crawlSite, countPages } from '../services/checker.js';
 import { validateUrl } from '../utils/validation.js';
 
 const router = express.Router();
@@ -31,12 +31,12 @@ router.post('/check', async (req, res) => {
 });
 
 /**
- * サイト全体のクロール診断API
- * POST /api/crawl
+ * ページ数カウントAPI
+ * POST /api/count-pages
  */
-router.post('/crawl', async (req, res) => {
+router.post('/count-pages', async (req, res) => {
   try {
-    const { startUrl, maxPages = process.env.MAX_PAGES || 30, auth } = req.body;
+    const { startUrl, auth } = req.body;
     
     // URL バリデーション
     const validationError = validateUrl(startUrl);
@@ -44,14 +44,32 @@ router.post('/crawl', async (req, res) => {
       return res.status(400).json({ error: validationError });
     }
 
-    // maxPages バリデーション
-    if (maxPages > 50) {
-      return res.status(400).json({ 
-        error: 'Max pages cannot exceed 50 for performance reasons' 
-      });
+    const result = await countPages(startUrl, auth);
+    res.json(result);
+  } catch (error) {
+    console.error('Count Pages API Error:', error);
+    res.status(500).json({ 
+      error: 'Page counting failed',
+      message: error.message 
+    });
+  }
+});
+
+/**
+ * サイト全体のクロール診断API
+ * POST /api/crawl
+ */
+router.post('/crawl', async (req, res) => {
+  try {
+    const { startUrl, urls, auth } = req.body;
+    
+    // URL バリデーション
+    const validationError = validateUrl(startUrl);
+    if (validationError) {
+      return res.status(400).json({ error: validationError });
     }
 
-    const results = await crawlSite(startUrl, maxPages, auth);
+    const results = await crawlSite(startUrl, urls, auth);
     res.json(results);
   } catch (error) {
     console.error('Crawl API Error:', error);

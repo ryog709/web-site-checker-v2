@@ -4,17 +4,18 @@ import type { BasicAuth } from '../types/index.js';
 
 interface UrlFormProps {
   onSingleCheck: (url: string, auth?: BasicAuth) => void;
-  onCrawl: (startUrl: string, maxPages: number, auth?: BasicAuth) => void;
+  onCrawl: (startUrl: string, urls?: string[], auth?: BasicAuth) => void;
+  onCountPages: (startUrl: string, auth?: BasicAuth) => void;
   isLoading: boolean;
 }
 
 export const UrlForm: React.FC<UrlFormProps> = ({
   onSingleCheck,
   onCrawl,
+  onCountPages,
   isLoading,
 }) => {
   const [url, setUrl] = useState('');
-  const [maxPages, setMaxPages] = useState(30);
   const [mode, setMode] = useState<'single' | 'crawl'>('single');
   const [useAuth, setUseAuth] = useState(false);
   const [username, setUsername] = useState('');
@@ -34,7 +35,7 @@ export const UrlForm: React.FC<UrlFormProps> = ({
     if (mode === 'single') {
       onSingleCheck(normalizedUrl, auth);
     } else {
-      onCrawl(normalizedUrl, maxPages, auth);
+      onCountPages(normalizedUrl, auth);
     }
   };
 
@@ -95,22 +96,10 @@ export const UrlForm: React.FC<UrlFormProps> = ({
 
       {mode === 'crawl' && (
         <div className="form-group">
-          <label htmlFor="max-pages" className="form-label">
-            最大ページ数
-          </label>
-          <input
-            id="max-pages"
-            type="number"
-            min="1"
-            max="50"
-            value={maxPages}
-            onChange={(e) => setMaxPages(parseInt(e.target.value, 10) || 30)}
-            className="number-input"
-            disabled={isLoading}
-            aria-describedby="pages-help"
-          />
-          <div id="pages-help" className="form-help">
-            クロールする最大ページ数（1-50）
+          <div className="crawl-info">
+            <p className="info-text">
+              📊 サイト全体診断では、まず対象サイトのページ数を確認してから診断を開始します
+            </p>
           </div>
         </div>
       )}

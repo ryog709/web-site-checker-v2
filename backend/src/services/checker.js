@@ -82,16 +82,16 @@ export async function checkSinglePage(url, auth = null) {
  * @param {number} maxPages - 最大ページ数
  * @returns {Object} クロール結果
  */
-export async function crawlSite(startUrl, maxPages = 30, auth = null) {
-    const urls = await discoverUrls(startUrl, maxPages, auth);
+export async function crawlSite(startUrl, urls = null, auth = null) {
+    const urlsToAnalyze = urls || await discoverUrls(startUrl, auth);
     const results = [];
 
-    console.log(`🔍 Discovered ${urls.length} pages to analyze`);
+    console.log(`🔍 Discovered ${urlsToAnalyze.length} pages to analyze`);
 
     // 並列実行数を制限（3並列）
     const concurrency = 3;
-    for (let i = 0; i < urls.length; i += concurrency) {
-        const batch = urls.slice(i, i + concurrency);
+    for (let i = 0; i < urlsToAnalyze.length; i += concurrency) {
+        const batch = urlsToAnalyze.slice(i, i + concurrency);
         const batchPromises = batch.map(url =>
             checkSinglePage(url, auth).catch(error => ({
                 url,
@@ -751,12 +751,12 @@ function getAllMeta($) {
 }
 
 /**
- * URL発見（クロール）
+ * ページ数をカウント（実際のクロールなし）
  * @param {string} startUrl - 開始URL
- * @param {number} maxPages - 最大ページ数
- * @returns {Array} 発見されたURL一覧
+ * @param {Object} auth - 認証情報
+ * @returns {Object} ページ数とURL一覧
  */
-async function discoverUrls(startUrl, maxPages, auth = null) {
+async function countPages(startUrl, auth = null) {
     const browser = await puppeteer.launch({
         headless: 'new',
         executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
@@ -785,7 +785,100 @@ async function discoverUrls(startUrl, maxPages, auth = null) {
         const discovered = [];
         const startDomain = new URL(startUrl).hostname;
 
-        while (toVisit.length > 0 && discovered.length < maxPages) {
+        // すべてのページを発見するまでクロール
+        while (toVisit.length > 0) {
+            const currentUrl = toVisit.shift();
+
+            if (visited.has(currentUrl)) continue;
+            visited.add(currentUrl);
+            discovered.push(currentUrl);
+
+            try {
+                const page = await browser.newPage();
+                
+                // ベーシック認証の設定
+                if (auth && auth.username && auth.password) {
+                    await page.authenticate({
+                        username: auth.username,
+                        password: auth.password
+                    });
+                }
+                
+                await page.goto(currentUrl, {
+                    waitUntil: 'networkidle2',
+                    timeout: 30000
+                });
+
+                // ページ内のリンクを取得
+                const links = await page.evaluate(() => {
+                    return Array.from(document.querySelectorAll('a[href]'))
+                        .map(a => a.href)
+                        .filter(href => href.startsWith('http'));
+                });
+
+                await page.close();
+
+                // 同一ドメインのリンクのみ追加
+                for (const link of links) {
+                    try {
+                        const linkUrl = new URL(link);
+                        if (linkUrl.hostname === startDomain && !visited.has(link) && !toVisit.includes(link)) {
+                            toVisit.push(link);
+                        }
+                    } catch (e) {
+                        // 無効なURLは無視
+                    }
+                }
+            } catch (e) {
+                console.warn(`Failed to process ${currentUrl}:`, e.message);
+            }
+        }
+
+        return {
+            totalPages: discovered.length,
+            urls: discovered
+        };
+    } finally {
+        await browser.close();
+    }
+}
+
+/**
+ * URL発見（クロール）
+ * @param {string} startUrl - 開始URL
+ * @param {Object} auth - 認証情報
+ * @returns {Array} 発見されたURL一覧
+ */
+async function discoverUrls(startUrl, auth = null) {
+    const browser = await puppeteer.launch({
+        headless: 'new',
+        executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
+            '--disable-features=TranslateUI',
+            '--disable-ipc-flooding-protection',
+            '--enable-chrome-browser-cloud-management',
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor'
+        ]
+    });
+
+    try {
+        const visited = new Set();
+        const toVisit = [startUrl];
+        const discovered = [];
+        const startDomain = new URL(startUrl).hostname;
+
+        while (toVisit.length > 0) {
             const currentUrl = toVisit.shift();
 
             if (visited.has(currentUrl)) continue;
@@ -838,3 +931,5 @@ async function discoverUrls(startUrl, maxPages, auth = null) {
         await browser.close();
     }
 }
+
+export { countPages };

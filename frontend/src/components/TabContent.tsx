@@ -496,6 +496,16 @@ export const TabContent: React.FC<TabContentProps> = ({
   const renderMetaInfo = (metaIssues: Issue[], allMeta: MetaInfo[]) => {
     return (
       <div className="meta-info-section">
+        {/* 問題がなく、メタ情報がある場合 */}
+        {metaIssues.length === 0 && allMeta.length > 0 && (
+          <div className="meta-success">
+            <div className="success-message">
+              <span className="success-icon">✅</span>
+              <span>メタ情報は適切に設定されています</span>
+            </div>
+          </div>
+        )}
+
         {/* メタ情報の詳細表示 */}
         {allMeta.length > 0 && (
           <div className="meta-details">
@@ -585,16 +595,6 @@ export const TabContent: React.FC<TabContentProps> = ({
               <div className="success-icon">❓</div>
               <h3>メタ情報が見つかりません</h3>
               <p>ページにメタ情報が設定されていないか、取得できませんでした</p>
-            </div>
-          </div>
-        )}
-
-        {/* 問題がなく、メタ情報がある場合 */}
-        {metaIssues.length === 0 && allMeta.length > 0 && (
-          <div className="meta-success">
-            <div className="success-message">
-              <span className="success-icon">✅</span>
-              <span>メタ情報は適切に設定されています</span>
             </div>
           </div>
         )}

@@ -43,9 +43,21 @@ export async function checkSinglePage(url: string, auth?: BasicAuth): Promise<Ch
   });
 }
 
-export async function crawlSite(startUrl: string, maxPages: number = 30, auth?: BasicAuth): Promise<CrawlResult> {
+export interface PageCountResult {
+  totalPages: number;
+  urls: string[];
+}
+
+export async function countPages(startUrl: string, auth?: BasicAuth): Promise<PageCountResult> {
+  return makeRequest<PageCountResult>('/count-pages', {
+    method: 'POST',
+    body: JSON.stringify({ startUrl, auth }),
+  });
+}
+
+export async function crawlSite(startUrl: string, urls?: string[], auth?: BasicAuth): Promise<CrawlResult> {
   return makeRequest<CrawlResult>('/crawl', {
     method: 'POST',
-    body: JSON.stringify({ startUrl, maxPages, auth }),
+    body: JSON.stringify({ startUrl, urls, auth }),
   });
 }
