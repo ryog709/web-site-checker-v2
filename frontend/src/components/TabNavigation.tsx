@@ -1,6 +1,6 @@
 import React from 'react';
 import type { TabType, CheckResult } from '../types/index.js';
-import { Heading, Image, AlertTriangle, Link, FileText, Eye } from 'lucide-react';
+import { Heading, Image, AlertTriangle, Link, FileText, Eye, Code } from 'lucide-react';
 
 interface TabNavigationProps {
   activeTab: TabType;
@@ -43,6 +43,12 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
       label: 'メタ情報',
       icon: FileText,
       count: issues.meta.length,
+    },
+    {
+      id: 'html-structure' as TabType,
+      label: 'HTML構造',
+      icon: Code,
+      count: issues.htmlStructure?.filter(issue => issue.severity !== 'success').length || 0,
     },
     {
       id: 'accessibility' as TabType,

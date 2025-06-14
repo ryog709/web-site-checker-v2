@@ -45,6 +45,9 @@ export interface Issue {
   severity: 'error' | 'warning' | 'info';
   src?: string;
   href?: string;
+  className?: string;
+  position?: number;
+  suggestion?: string;
 }
 
 export interface LighthouseIssue {
@@ -91,6 +94,7 @@ export interface CheckResult {
     links: Issue[];
     meta: Issue[];
     allMeta: MetaInfo[]; // 全てのメタ情報を追加
+    htmlStructure: Issue[]; // HTML構造チェック結果を追加
     accessibility: {
       lighthouse: LighthouseIssue[];
       axe: AxeViolation[];
@@ -125,4 +129,4 @@ export interface CrawlRequest {
   auth?: BasicAuth;
 }
 
-export type TabType = 'headings' | 'images' | 'image-issues' | 'links' | 'meta' | 'accessibility';
+export type TabType = 'headings' | 'images' | 'image-issues' | 'links' | 'meta' | 'html-structure' | 'accessibility';

@@ -320,7 +320,8 @@ async function analyzeDom(page) {
         allImages: getAllImages($), // 全ての画像情報を追加
         links: analyzeLinks($),
         meta: analyzeMeta($),
-        allMeta: getAllMeta($) // 全てのメタ情報を追加
+        allMeta: getAllMeta($), // 全てのメタ情報を追加
+        htmlStructure: analyzeHtmlStructure(content) // HTML構造チェックを追加
     };
 }
 
@@ -1222,6 +1223,145 @@ async function collectSiteLinks(page, currentUrl) {
         console.warn('Failed to collect site links:', error.message);
         return [];
     }
+}
+
+/**
+ * HTML構造の分析（閉じタグとネスト構造のチェック）
+ * @param {string} htmlContent - HTMLコンテンツ
+ * @returns {Array} HTML構造の問題一覧
+ */
+function analyzeHtmlStructure(htmlContent) {
+    const issues = [];
+    
+    try {
+        // 閉じタグの問題をチェック
+        checkUnclosedTags(htmlContent, issues);
+        
+        // ネスト構造のチェック
+        checkNestingIssues(htmlContent, issues);
+        
+        // 問題がない場合の表示
+        if (issues.length === 0) {
+            issues.push({
+                type: '正常',
+                message: '閉じタグは問題ありません',
+                severity: 'success'
+            });
+            issues.push({
+                type: '正常',
+                message: '不正なネスト構造はありません',
+                severity: 'success'
+            });
+        }
+        
+    } catch (error) {
+        console.warn('HTML structure analysis failed:', error.message);
+    }
+    
+    return issues;
+}
+
+
+/**
+ * 閉じタグの問題をチェック
+ */
+function checkUnclosedTags(htmlContent, issues) {
+    // 自己完結型タグ（void elements）
+    const voidElements = ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'];
+    
+    // 開始タグと終了タグをマッチング
+    const tagRegex = /<(\/?)([\w-]+)(?:\s[^>]*)?>/gi;
+    const stack = [];
+    const tagPositions = [];
+    let match;
+    
+    while ((match = tagRegex.exec(htmlContent)) !== null) {
+        const isClosing = match[1] === '/';
+        const tagName = match[2].toLowerCase();
+        const position = match.index;
+        
+        // void elementsはスキップ
+        if (voidElements.includes(tagName)) continue;
+        
+        if (isClosing) {
+            const lastOpen = stack.pop();
+            if (!lastOpen || lastOpen.name !== tagName) {
+                // 対応する開始タグがない、または異なるタグ
+                const className = extractClassName(htmlContent, position);
+                issues.push({
+                    type: '閉じタグエラー',
+                    element: tagName,
+                    className: className,
+                    message: `</${tagName}> に対応する開始タグが見つかりません`,
+                    severity: 'error',
+                    position: position
+                });
+            }
+        } else {
+            stack.push({ name: tagName, position: position });
+            tagPositions.push({ name: tagName, position: position, type: 'open' });
+        }
+    }
+    
+    // 閉じられていないタグ
+    stack.forEach(tag => {
+        const className = extractClassName(htmlContent, tag.position);
+        issues.push({
+            type: '未閉じタグ',
+            element: tag.name,
+            className: className,
+            message: `<${tag.name}> タグが閉じられていません`,
+            severity: 'error',
+            position: tag.position,
+            suggestion: `</${tag.name}> で閉じてください`
+        });
+    });
+}
+
+/**
+ * ネスト構造の問題をチェック
+ */
+function checkNestingIssues(htmlContent, issues) {
+    // 不正なネストのパターン
+    const invalidNesting = [
+        { parent: 'p', child: 'div', message: 'p要素内にdiv要素をネストできません' },
+        { parent: 'p', child: 'p', message: 'p要素内にp要素をネストできません' },
+        { parent: 'a', child: 'a', message: 'a要素内にa要素をネストできません' },
+        { parent: 'button', child: 'button', message: 'button要素内にbutton要素をネストできません' },
+        { parent: 'button', child: 'a', message: 'button要素内にa要素をネストできません' },
+        { parent: 'h1|h2|h3|h4|h5|h6', child: 'h1|h2|h3|h4|h5|h6', message: '見出し要素内に見出し要素をネストできません' }
+    ];
+    
+    invalidNesting.forEach(rule => {
+        const parentPattern = new RegExp(`<(${rule.parent})(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(${rule.parent})>`, 'gi');
+        let parentMatch;
+        
+        while ((parentMatch = parentPattern.exec(htmlContent)) !== null) {
+            const innerContent = parentMatch[2];
+            const childPattern = new RegExp(`<(${rule.child})(?:\\s[^>]*)?>`, 'i');
+            
+            if (childPattern.test(innerContent)) {
+                const className = extractClassName(htmlContent, parentMatch.index);
+                issues.push({
+                    type: '不正なネスト',
+                    element: `${parentMatch[1]} > ${rule.child}`,
+                    className: className,
+                    message: rule.message,
+                    severity: 'error',
+                    position: parentMatch.index
+                });
+            }
+        }
+    });
+}
+
+/**
+ * 指定位置周辺からclass名を抽出
+ */
+function extractClassName(htmlContent, position) {
+    const surroundingText = htmlContent.substring(Math.max(0, position - 100), position + 200);
+    const classMatch = surroundingText.match(/class\s*=\s*["']([^"']+)["']/i);
+    return classMatch ? classMatch[1] : null;
 }
 
 export { countPages };

@@ -72,6 +72,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
         (pageResult.issues?.images?.length || 0) +
         (pageResult.issues?.links?.length || 0) +
         (pageResult.issues?.meta?.length || 0) +
+        (pageResult.issues?.htmlStructure?.length || 0) +
         (pageResult.issues?.accessibility?.lighthouse?.length || 0) +
         (pageResult.issues?.accessibility?.axe?.length || 0);
       
@@ -158,6 +159,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
                     (r.issues?.images?.length || 0) +
                     (r.issues?.links?.length || 0) +
                     (r.issues?.meta?.length || 0) +
+                    (r.issues?.htmlStructure?.length || 0) +
                     (r.issues?.accessibility?.lighthouse?.length || 0) +
                     (r.issues?.accessibility?.axe?.length || 0);
                   return totalIssues === 0;

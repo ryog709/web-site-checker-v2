@@ -21,6 +21,7 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
       ...issues.images,
       ...issues.links,
       ...issues.meta,
+      ...(issues.htmlStructure || []),
     ];
 
     allIssues.forEach(issue => {

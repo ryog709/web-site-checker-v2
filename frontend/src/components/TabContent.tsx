@@ -602,6 +602,107 @@ export const TabContent: React.FC<TabContentProps> = ({
     );
   };
 
+  const renderHtmlStructure = (htmlStructureIssues: Issue[]) => {
+    // 成功メッセージと問題を分離
+    const successMessages = htmlStructureIssues.filter(issue => issue.severity === 'success');
+    const actualIssues = htmlStructureIssues.filter(issue => issue.severity !== 'success');
+
+    return (
+      <div className="html-structure-section">
+        {/* 成功メッセージがある場合 */}
+        {successMessages.length > 0 && (
+          <div className="html-success">
+            <div className="success-checklist">
+              <div className="success-icon">✅</div>
+              <h3>HTML構造の診断結果</h3>
+              <div className="checklist">
+                {successMessages.map((success, index) => (
+                  <div key={index} className="checklist-item">
+                    <span className="check-icon">✅</span>
+                    <span>{success.message}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 問題がある場合の表示 */}
+        {actualIssues.length > 0 && (
+          <div className="html-issues">
+            <div className="section-header">
+              <div className="section-title">
+                <AlertTriangle size={20} />
+                <h4>HTML構造の問題</h4>
+                <span className="count-badge error">{actualIssues.length}</span>
+              </div>
+              <p className="section-description">
+                HTML文書の構造に関する問題が見つかりました。これらの問題は、ブラウザの表示やアクセシビリティに影響する可能性があります。
+              </p>
+            </div>
+
+            <div className="issues-grid">
+              {actualIssues.map((issue, index) => (
+                <div key={index} className={`issue-card severity-${issue.severity}`}>
+                  <div className="issue-header">
+                    <span className="issue-type">{issue.type}</span>
+                    <span className={`severity-badge severity-${issue.severity}`}>
+                      {issue.severity === 'error' && 'エラー'}
+                      {issue.severity === 'warning' && '警告'}
+                      {issue.severity === 'info' && '情報'}
+                    </span>
+                  </div>
+                  
+                  <div className="issue-content">
+                    <h5>{issue.message}</h5>
+                    
+                    {issue.element && (
+                      <div className="issue-element">
+                        <code>&lt;{issue.element}&gt;</code>
+                      </div>
+                    )}
+                    
+                    {issue.className && (
+                      <div className="issue-class">
+                        <strong>問題箇所のクラス名:</strong>
+                        <code className="class-name">{issue.className}</code>
+                      </div>
+                    )}
+                    
+                    {issue.suggestion && (
+                      <div className="issue-suggestion">
+                        <strong>改善案:</strong>
+                        <p>{issue.suggestion}</p>
+                      </div>
+                    )}
+                    
+                    <button
+                      className="detail-button-modern"
+                      onClick={() => setSelectedIssue(issue)}
+                    >
+                      詳細を見る
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 問題もない場合（バックアップ） */}
+        {htmlStructureIssues.length === 0 && (
+          <div className="no-issues">
+            <div className="success-state">
+              <div className="success-icon">✅</div>
+              <h3>HTML構造に問題はありません</h3>
+              <p>HTML文書の構造は適切に記述されています</p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'headings':
@@ -623,6 +724,8 @@ export const TabContent: React.FC<TabContentProps> = ({
         return renderIssueTable(issues.links, 'リンク');
       case 'meta':
         return renderMetaInfo(issues.meta, issues.allMeta || []);
+      case 'html-structure':
+        return renderHtmlStructure(issues.htmlStructure || []);
       case 'accessibility':
         return renderAccessibilityIssues();
       default:
