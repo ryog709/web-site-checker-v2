@@ -19,10 +19,27 @@ const PORT = process.env.PORT || 4000;
 app.use(helmet());
 
 // CORS設定
+const getAllowedOrigins = () => {
+  if (process.env.NODE_ENV === 'production') {
+    // 本番環境では Vercel フロントエンドのドメインを許可
+    return [
+      'https://web-site-checker-v2.vercel.app',
+      'https://web-site-checker-v2-git-main-ryog709s-projects.vercel.app',
+      'https://web-site-checker-v2-ryog709s-projects.vercel.app'
+    ];
+  } else {
+    // 開発環境では localhost を許可
+    return [
+      'http://localhost:5173', 
+      'http://127.0.0.1:5173', 
+      'http://localhost:5174', 
+      'http://127.0.0.1:5174'
+    ];
+  }
+};
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? false 
-    : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174'],
+  origin: getAllowedOrigins(),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
