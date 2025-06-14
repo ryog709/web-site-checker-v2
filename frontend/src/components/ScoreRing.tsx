@@ -10,7 +10,6 @@ interface ScoreRingProps {
 export const ScoreRing: React.FC<ScoreRingProps> = ({
   score,
   label,
-  color,
   size = 120,
 }) => {
   const radius = (size - 12) / 2;

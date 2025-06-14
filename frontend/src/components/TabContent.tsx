@@ -7,16 +7,12 @@ import { getProxiedImageUrl, isValidImageUrl } from '../utils/imageUtils.js';
 interface TabContentProps {
   activeTab: TabType;
   issues: CheckResult['issues'];
-  isCrawlResult: boolean;
-  allResults: CheckResult[];
   auth?: BasicAuth;
 }
 
 export const TabContent: React.FC<TabContentProps> = ({
   activeTab,
   issues,
-  isCrawlResult,
-  allResults,
   auth,
 }) => {
   const [selectedIssue, setSelectedIssue] = useState<any>(null);

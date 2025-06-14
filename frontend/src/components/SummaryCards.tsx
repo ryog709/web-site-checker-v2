@@ -14,7 +14,7 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
   totalPages,
 }) => {
   const countIssuesBySeverity = () => {
-    const counts = { error: 0, warning: 0, info: 0 };
+    const counts = { error: 0, warning: 0, info: 0, success: 0 };
 
     const allIssues = [
       ...issues.headings,
@@ -25,7 +25,9 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
     ];
 
     allIssues.forEach(issue => {
-      counts[issue.severity]++;
+      if (issue.severity in counts) {
+        counts[issue.severity as keyof typeof counts]++;
+      }
     });
 
     counts.error += issues.accessibility.lighthouse.length;

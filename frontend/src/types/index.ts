@@ -42,12 +42,14 @@ export interface Issue {
   type: string;
   element?: string;
   message: string;
-  severity: 'error' | 'warning' | 'info';
+  severity: 'error' | 'warning' | 'info' | 'success';
   src?: string;
   href?: string;
   className?: string;
   position?: number;
   suggestion?: string;
+  linkText?: string;
+  linkHtml?: string;
 }
 
 export interface LighthouseIssue {

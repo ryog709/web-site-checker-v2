@@ -329,8 +329,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
               <TabContent
                 activeTab={activeTab}
                 issues={data.issues}
-                isCrawlResult={isCrawlResult}
-                allResults={isCrawlResult ? result.results : [data]}
                 auth={result.auth}
               />
             </div>

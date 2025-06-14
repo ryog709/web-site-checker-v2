@@ -3,8 +3,11 @@ import type { CheckResult, CrawlResult, BasicAuth } from '../types/index.js';
 const API_BASE_URL = 'http://localhost:4000/api';
 
 export class ApiError extends Error {
-  constructor(message: string, public status?: number) {
+  status?: number;
+  
+  constructor(message: string, status?: number) {
     super(message);
+    this.status = status;
     this.name = 'ApiError';
   }
 }
