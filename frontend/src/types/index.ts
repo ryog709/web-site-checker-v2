@@ -3,20 +3,21 @@ export interface LighthouseScores {
   accessibility: number;
   bestpractices: number;
   seo: number;
-  pwa: number;
 }
 
 export interface ImageInfo {
   index: number;
   src: string;
   originalSrc: string;
-  alt: string;
+  alt: string; // imgタグのalt属性 または SVGのaria-label/title
   title: string;
   width: number | null;
   height: number | null;
-  hasAlt: boolean;
+  hasAlt: boolean; // imgではalt属性の有無、SVGではaria-label/titleの有無
   hasDimensions: boolean;
   filename: string;
+  type?: 'svg' | 'img'; // 画像の種類（通常の画像 or インラインSVG）
+  role?: string; // SVGのrole属性（img, presentation等）
 }
 
 export interface HeadingImage {
@@ -70,6 +71,23 @@ export interface AxeViolation {
   nodes: number;
 }
 
+export interface ConsoleError {
+  type: 'console-error' | 'javascript-error' | 'request-failed';
+  message: string;
+  timestamp: string;
+  severity: 'error' | 'warning';
+  location?: {
+    url: string;
+    lineNumber: number;
+    columnNumber: number;
+  };
+  stack?: string;
+  url?: string;
+  failure?: {
+    errorText: string;
+  };
+}
+
 export interface MetaInfo {
   type: string;
   name: string;
@@ -101,6 +119,7 @@ export interface CheckResult {
       lighthouse: LighthouseIssue[];
       axe: AxeViolation[];
     };
+    consoleErrors: ConsoleError[]; // コンソールエラーを追加
   };
   siteLinks?: SiteLink[]; // 他ページへのリンク一覧を追加
   auth?: BasicAuth; // 使用された認証情報を保存
@@ -131,4 +150,4 @@ export interface CrawlRequest {
   auth?: BasicAuth;
 }
 
-export type TabType = 'headings' | 'images' | 'image-issues' | 'links' | 'meta' | 'html-structure' | 'accessibility';
+export type TabType = 'headings' | 'images' | 'image-issues' | 'links' | 'meta' | 'html-structure' | 'accessibility' | 'console-errors';

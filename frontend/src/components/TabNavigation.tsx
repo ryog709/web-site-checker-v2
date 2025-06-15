@@ -1,6 +1,6 @@
 import React from 'react';
 import type { TabType, CheckResult } from '../types/index.js';
-import { Heading, Image, AlertTriangle, Link, FileText, Eye, Code } from 'lucide-react';
+import { Heading, Image, AlertTriangle, Link, FileText, Eye, Code, Terminal } from 'lucide-react';
 
 interface TabNavigationProps {
   activeTab: TabType;
@@ -55,6 +55,12 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
       label: 'アクセシビリティ',
       icon: Eye,
       count: issues.accessibility.lighthouse.length + issues.accessibility.axe.length,
+    },
+    {
+      id: 'console-errors' as TabType,
+      label: 'コンソールエラー',
+      icon: Terminal,
+      count: issues.consoleErrors?.length || 0,
     },
   ];
 

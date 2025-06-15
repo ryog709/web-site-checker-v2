@@ -52,10 +52,11 @@ export async function checkSinglePage(url, auth = null) {
         });
 
         // 並列実行で診断を高速化
-        const [lighthouseResults, axeResults, domAnalysis] = await Promise.all([
+        const [lighthouseResults, axeResults, domAnalysis, consoleErrors] = await Promise.all([
             runLighthouse(url, auth, browser),
             runAxeCore(page),
-            analyzeDom(page)
+            analyzeDom(page),
+            collectConsoleErrors(page)
         ]);
 
         // 同じドメインの他のページリンクを収集
@@ -70,7 +71,8 @@ export async function checkSinglePage(url, auth = null) {
                 accessibility: {
                     lighthouse: lighthouseResults.accessibility,
                     axe: axeResults
-                }
+                },
+                consoleErrors: consoleErrors
             },
             siteLinks, // 他ページへのリンク一覧を追加
             auth: auth // 認証情報を結果に含める
@@ -134,7 +136,7 @@ async function runLighthouse(url, auth = null, browser = null) {
             const {
                 lhr
             } = await lighthouse(url, {
-                onlyCategories: ['performance', 'accessibility', 'best-practices', 'seo', 'pwa'],
+                onlyCategories: ['performance', 'accessibility', 'best-practices', 'seo'],
                 settings: {
                     maxWaitForFcp: 15 * 1000,
                     maxWaitForLoad: 35 * 1000,
@@ -170,8 +172,7 @@ async function runLighthouse(url, auth = null, browser = null) {
                 performance: Math.round((lhr.categories.performance?.score || 0) * 100),
                 accessibility: Math.round((lhr.categories.accessibility?.score || 0) * 100),
                 bestpractices: Math.round((lhr.categories['best-practices']?.score || 0) * 100),
-                seo: Math.round((lhr.categories.seo?.score || 0) * 100),
-                pwa: Math.round((lhr.categories.pwa?.score || 0) * 100)
+                seo: Math.round((lhr.categories.seo?.score || 0) * 100)
             };
 
             // アクセシビリティの失敗項目のみ抽出
@@ -234,9 +235,6 @@ async function calculateBasicScores(url, browser) {
                 // パフォーマンス関連
                 resourceCount: performance.getEntriesByType('resource').length,
                 
-                // PWA関連
-                hasManifest: !!document.querySelector('link[rel="manifest"]'),
-                hasServiceWorker: 'serviceWorker' in navigator
             };
         });
         
@@ -247,15 +245,13 @@ async function calculateBasicScores(url, browser) {
         const accessibility = Math.max(0, 100 - (metrics.imagesWithoutAlt * 10));
         const seo = (metrics.hasTitle ? 40 : 0) + (metrics.hasDescription ? 40 : 0) + (metrics.hasH1 ? 20 : 0);
         const bestpractices = Math.max(0, 100 - Math.max(0, metrics.resourceCount - 50)); // 50リソース超で減点
-        const pwa = (metrics.hasManifest ? 50 : 0) + (metrics.hasServiceWorker ? 50 : 0);
         
         return {
             scores: {
                 performance,
                 accessibility,
                 bestpractices,
-                seo,
-                pwa
+                seo
             },
             accessibility: []
         };
@@ -266,8 +262,7 @@ async function calculateBasicScores(url, browser) {
                 performance: 0,
                 accessibility: 0,
                 bestpractices: 0,
-                seo: 0,
-                pwa: 0
+                seo: 0
             },
             accessibility: []
         };
@@ -491,6 +486,31 @@ function getAllImages($) {
         });
     });
     
+    // SVGタグも画像として処理（アクセシビリティチェック対象）
+    $('svg').each((index, svg) => {
+        const $svg = $(svg);
+        const role = $svg.attr('role');
+        const ariaLabel = $svg.attr('aria-label');
+        const title = $svg.find('title').text();
+        const width = $svg.attr('width');
+        const height = $svg.attr('height');
+        
+        images.push({
+            index: images.length + 1,
+            src: 'svg-inline',
+            originalSrc: 'svg-inline',
+            alt: ariaLabel || title || '', // SVGではaria-labelまたはtitleが代替テキストの役割
+            title: title || '',
+            width: width ? parseInt(width) : null,
+            height: height ? parseInt(height) : null,
+            hasAlt: !!(ariaLabel || title), // SVGのアクセシビリティ判定
+            hasDimensions: !!(width && height),
+            filename: 'inline-svg',
+            type: 'svg',
+            role: role
+        });
+    });
+    
     return images;
 }
 
@@ -502,6 +522,7 @@ function getAllImages($) {
 function analyzeImages($) {
     const issues = [];
 
+    // imgタグの処理
     $('img').each((index, img) => {
         const $img = $(img);
         const src = $img.attr('src');
@@ -540,6 +561,34 @@ function analyzeImages($) {
                 src: absoluteSrc,
                 message: 'width属性またはheight属性が設定されていません',
                 severity: 'warning'
+            });
+        }
+    });
+
+    // SVGタグのアクセシビリティチェック
+    $('svg').each((index, svg) => {
+        const $svg = $(svg);
+        const role = $svg.attr('role');
+        const ariaLabel = $svg.attr('aria-label');
+        const ariaLabelledby = $svg.attr('aria-labelledby');
+        const title = $svg.find('title').text();
+        
+        // SVGには以下のいずれかが必要：
+        // 1. role="img" + aria-label または title
+        // 2. role="presentation" (装飾的な場合)
+        // 3. aria-labelledby で説明要素を参照
+        if (role !== 'img' && role !== 'presentation' && !ariaLabel && !ariaLabelledby && !title) {
+            issues.push({
+                type: 'SVGアクセシビリティ',
+                element: 'svg',
+                message: 'SVGにアクセシブルな説明（aria-label、title、またはrole="presentation"）が設定されていません',
+                severity: 'warning',
+                details: {
+                    role: role,
+                    ariaLabel: ariaLabel,
+                    ariaLabelledby: ariaLabelledby,
+                    hasTitle: !!title
+                }
             });
         }
     });
@@ -1103,6 +1152,69 @@ async function discoverUrls(startUrl, auth = null) {
     } finally {
         await browser.close();
     }
+}
+
+/**
+ * コンソールエラーを収集
+ * @param {Object} page - Puppeteer page instance
+ * @returns {Array} コンソールエラー一覧
+ */
+async function collectConsoleErrors(page) {
+    const consoleErrors = [];
+    
+    // 新しいページを作成してエラー収集用にセットアップ
+    const errorPage = await page.browser().newPage();
+    
+    try {
+        // コンソールメッセージをリスン
+        errorPage.on('console', msg => {
+            if (msg.type() === 'error') {
+                consoleErrors.push({
+                    type: 'console-error',
+                    message: msg.text(),
+                    timestamp: new Date().toISOString(),
+                    severity: 'error',
+                    location: msg.location()
+                });
+            }
+        });
+        
+        // JavaScriptエラーをリスン
+        errorPage.on('pageerror', error => {
+            consoleErrors.push({
+                type: 'javascript-error',
+                message: error.message,
+                stack: error.stack,
+                timestamp: new Date().toISOString(),
+                severity: 'error'
+            });
+        });
+        
+        // リクエストエラーをリスン
+        errorPage.on('requestfailed', request => {
+            consoleErrors.push({
+                type: 'request-failed',
+                message: `Failed to load resource: ${request.url()}`,
+                url: request.url(),
+                failure: request.failure(),
+                timestamp: new Date().toISOString(),
+                severity: 'warning'
+            });
+        });
+        
+        // ページにアクセスしてエラーを収集
+        await errorPage.goto(page.url(), { waitUntil: 'networkidle2' });
+        
+        // 少し待ってエラーを収集
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+    } catch (error) {
+        console.warn('Failed to collect console errors:', error.message);
+    } finally {
+        await errorPage.close();
+    }
+    
+    return consoleErrors;
 }
 
 /**

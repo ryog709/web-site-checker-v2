@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import type { TabType, CheckResult, Issue, Heading, ImageInfo, BasicAuth, MetaInfo } from '../types/index.js';
-import { ExternalLink, AlertTriangle, AlertCircle, Info, Image as ImageIcon, FileText, Eye } from 'lucide-react';
+import type { TabType, CheckResult, Issue, Heading, ImageInfo, BasicAuth, MetaInfo, ConsoleError } from '../types/index.js';
+import { ExternalLink, AlertTriangle, AlertCircle, Info, Image as ImageIcon, FileText, Eye, Terminal, Clock, LinkIcon } from 'lucide-react';
 import { Modal } from './Modal.js';
 import { getProxiedImageUrl, isValidImageUrl } from '../utils/imageUtils.js';
 
@@ -122,7 +122,7 @@ export const TabContent: React.FC<TabContentProps> = ({
           <div className="empty-state">
             <ImageIcon size={48} className="empty-icon" />
             <h3>画像が見つかりませんでした</h3>
-            <p>このページには画像要素（img）がありません</p>
+            <p>このページには画像要素（img、SVG）がありません</p>
           </div>
         </div>
       );
@@ -137,7 +137,7 @@ export const TabContent: React.FC<TabContentProps> = ({
             <span className="count-badge">{allImages.length}</span>
           </div>
           <p className="section-description">
-            ページ内の全ての画像と属性情報を表示。width/heightの設定状況を確認できます。
+            ページ内の全ての画像（img、SVG）と属性情報を表示。アクセシビリティとパフォーマンスを確認できます。
           </p>
         </div>
 
@@ -145,7 +145,16 @@ export const TabContent: React.FC<TabContentProps> = ({
           {allImages.map((image, index) => (
             <div key={index} className="image-card">
               <div className="image-preview-container">
-                {isValidImageUrl(image.src) ? (
+                {image.type === 'svg' ? (
+                  <div className="svg-preview">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21,15 16,10 5,21"/>
+                    </svg>
+                    <span>インラインSVG</span>
+                  </div>
+                ) : isValidImageUrl(image.src) ? (
                   <img 
                     src={getProxiedImageUrl(image.src, auth)} 
                     alt={image.alt || `画像 ${image.index}`}
@@ -207,6 +216,20 @@ export const TabContent: React.FC<TabContentProps> = ({
                     <span className="attribute-label">ファイル:</span>
                     <span className="attribute-value filename">{image.filename}</span>
                   </div>
+                  
+                  {image.type === 'svg' && (
+                    <div className="attribute-row">
+                      <span className="attribute-label">タイプ:</span>
+                      <span className="attribute-value svg-type">📐 SVG</span>
+                    </div>
+                  )}
+                  
+                  {image.role && (
+                    <div className="attribute-row">
+                      <span className="attribute-label">Role:</span>
+                      <span className="attribute-value">{image.role}</span>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="image-status">
@@ -598,6 +621,187 @@ export const TabContent: React.FC<TabContentProps> = ({
     );
   };
 
+  const renderConsoleErrors = (consoleErrors: ConsoleError[]) => {
+    if (consoleErrors.length === 0) {
+      return (
+        <div className="no-issues">
+          <div className="success-state">
+            <div className="success-icon">✅</div>
+            <h3>コンソールエラーは見つかりませんでした</h3>
+            <p>JavaScriptエラーやリクエストエラーは検出されませんでした</p>
+          </div>
+        </div>
+      );
+    }
+
+    // エラーを種類別に分類
+    const consoleErrorMessages = consoleErrors.filter(error => error.type === 'console-error');
+    const javascriptErrors = consoleErrors.filter(error => error.type === 'javascript-error');
+    const requestFailures = consoleErrors.filter(error => error.type === 'request-failed');
+
+    const formatTimestamp = (timestamp: string) => {
+      return new Date(timestamp).toLocaleString('ja-JP', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        month: 'short',
+        day: 'numeric'
+      });
+    };
+
+    const getErrorIcon = (type: string) => {
+      switch (type) {
+        case 'console-error':
+          return <Terminal size={16} className="error-icon console-error" />;
+        case 'javascript-error':
+          return <AlertTriangle size={16} className="error-icon javascript-error" />;
+        case 'request-failed':
+          return <LinkIcon size={16} className="error-icon request-failed" />;
+        default:
+          return <AlertCircle size={16} className="error-icon" />;
+      }
+    };
+
+    return (
+      <div className="console-errors-section">
+        <div className="section-header">
+          <div className="section-title">
+            <Terminal size={20} />
+            <h4>コンソールエラー</h4>
+            <span className="count-badge error">{consoleErrors.length}</span>
+          </div>
+          <p className="section-description">
+            ページ読み込み時に発生したJavaScriptエラーとリクエストエラーを表示しています。
+          </p>
+        </div>
+
+        {/* コンソールエラー */}
+        {consoleErrorMessages.length > 0 && (
+          <div className="error-category">
+            <div className="category-header">
+              <Terminal size={18} />
+              <h5>コンソールエラー ({consoleErrorMessages.length})</h5>
+            </div>
+            <div className="errors-grid">
+              {consoleErrorMessages.map((error, index) => (
+                <div key={index} className="error-card console-error">
+                  <div className="error-header">
+                    {getErrorIcon(error.type)}
+                    <span className="error-type">コンソールエラー</span>
+                    <div className="error-timestamp">
+                      <Clock size={12} />
+                      {formatTimestamp(error.timestamp)}
+                    </div>
+                  </div>
+                  <div className="error-message">
+                    {error.message}
+                  </div>
+                  {error.location && (
+                    <div className="error-location">
+                      <strong>場所:</strong> {error.location.url}:{error.location.lineNumber}:{error.location.columnNumber}
+                    </div>
+                  )}
+                  <button
+                    className="detail-button-modern"
+                    onClick={() => setSelectedIssue({ ...error, type: 'Console Error' })}
+                  >
+                    <Eye size={14} />
+                    詳細を見る
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* JavaScriptエラー */}
+        {javascriptErrors.length > 0 && (
+          <div className="error-category">
+            <div className="category-header">
+              <AlertTriangle size={18} />
+              <h5>JavaScriptエラー ({javascriptErrors.length})</h5>
+            </div>
+            <div className="errors-grid">
+              {javascriptErrors.map((error, index) => (
+                <div key={index} className="error-card javascript-error">
+                  <div className="error-header">
+                    {getErrorIcon(error.type)}
+                    <span className="error-type">JavaScriptエラー</span>
+                    <div className="error-timestamp">
+                      <Clock size={12} />
+                      {formatTimestamp(error.timestamp)}
+                    </div>
+                  </div>
+                  <div className="error-message">
+                    {error.message}
+                  </div>
+                  {error.stack && (
+                    <div className="error-stack">
+                      <strong>スタックトレース:</strong>
+                      <pre className="stack-trace">{error.stack}</pre>
+                    </div>
+                  )}
+                  <button
+                    className="detail-button-modern"
+                    onClick={() => setSelectedIssue({ ...error, type: 'JavaScript Error' })}
+                  >
+                    <Eye size={14} />
+                    詳細を見る
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* リクエスト失敗 */}
+        {requestFailures.length > 0 && (
+          <div className="error-category">
+            <div className="category-header">
+              <LinkIcon size={18} />
+              <h5>リクエスト失敗 ({requestFailures.length})</h5>
+            </div>
+            <div className="errors-grid">
+              {requestFailures.map((error, index) => (
+                <div key={index} className="error-card request-failed">
+                  <div className="error-header">
+                    {getErrorIcon(error.type)}
+                    <span className="error-type">リクエスト失敗</span>
+                    <div className="error-timestamp">
+                      <Clock size={12} />
+                      {formatTimestamp(error.timestamp)}
+                    </div>
+                  </div>
+                  <div className="error-message">
+                    {error.message}
+                  </div>
+                  {error.url && (
+                    <div className="error-url">
+                      <strong>URL:</strong> 
+                      <span className="url-text">{error.url}</span>
+                    </div>
+                  )}
+                  {error.failure && (
+                    <div className="error-failure">
+                      <strong>エラー詳細:</strong> {error.failure.errorText}
+                    </div>
+                  )}
+                  <button
+                    className="detail-button-modern"
+                    onClick={() => setSelectedIssue({ ...error, type: 'Request Failed' })}
+                  >
+                    <Eye size={14} />
+                    詳細を見る
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderHtmlStructure = (htmlStructureIssues: Issue[]) => {
     // 成功メッセージと問題を分離
     const successMessages = htmlStructureIssues.filter(issue => issue.severity === 'success');
@@ -724,6 +928,8 @@ export const TabContent: React.FC<TabContentProps> = ({
         return renderHtmlStructure(issues.htmlStructure || []);
       case 'accessibility':
         return renderAccessibilityIssues();
+      case 'console-errors':
+        return renderConsoleErrors(issues.consoleErrors || []);
       default:
         return null;
     }

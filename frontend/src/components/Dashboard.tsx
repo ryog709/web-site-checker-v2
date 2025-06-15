@@ -35,8 +35,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
     performance: data?.scores?.performance ?? 0,
     accessibility: data?.scores?.accessibility ?? 0,
     bestpractices: data?.scores?.bestpractices ?? 0,
-    seo: data?.scores?.seo ?? 0,
-    pwa: data?.scores?.pwa ?? 0
+    seo: data?.scores?.seo ?? 0
   };
 
   if (!data || data.error) {
@@ -300,11 +299,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
                     score={scores.seo}
                     label="SEO"
                     color="--score-seo"
-                  />
-                  <ScoreRing
-                    score={scores.pwa}
-                    label="PWA"
-                    color="--score-pwa"
                   />
                 </div>
               </div>

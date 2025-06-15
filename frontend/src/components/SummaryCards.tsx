@@ -34,6 +34,12 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
     counts.warning += issues.accessibility.axe.filter(v => v.impact === 'serious' || v.impact === 'critical').length;
     counts.info += issues.accessibility.axe.filter(v => v.impact === 'moderate' || v.impact === 'minor').length;
 
+    // コンソールエラーを追加
+    if (issues.consoleErrors) {
+      counts.error += issues.consoleErrors.filter(error => error.severity === 'error').length;
+      counts.warning += issues.consoleErrors.filter(error => error.severity === 'warning').length;
+    }
+
     return counts;
   };
 

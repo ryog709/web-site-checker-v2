@@ -1501,6 +1501,37 @@ body {
   text-align: center;
 }
 
+.svg-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  color: var(--color-text-secondary);
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+}
+
+.svg-preview svg {
+  color: var(--color-primary);
+  opacity: 0.6;
+}
+
+.svg-preview span {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.attribute-value.svg-type {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
 .image-info-card {
   padding: var(--spacing-lg);
 }
