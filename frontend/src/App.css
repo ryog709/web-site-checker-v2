@@ -392,6 +392,7 @@ body {
   margin-bottom: var(--spacing-xs);
   padding-left: var(--spacing-sm);
   position: relative;
+  line-height: 1.4;
 }
 
 .recommendations-list li:before {
@@ -403,6 +404,20 @@ body {
 
 .recommendations-list li:last-child {
   margin-bottom: 0;
+}
+
+.recommendations-list li strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.recommendations-list li code {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-family: monospace;
+  font-size: 0.7rem;
+  color: var(--color-text-primary);
 }
 
 /* Summary cards */

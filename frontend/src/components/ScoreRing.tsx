@@ -100,7 +100,9 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({
             <div className="recommendations-list">
               <ul>
                 {recommendations.map((recommendation, index) => (
-                  <li key={index}>{recommendation}</li>
+                  <li key={index} dangerouslySetInnerHTML={{
+                    __html: recommendation.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                  }} />
                 ))}
               </ul>
             </div>

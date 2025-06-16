@@ -44,8 +44,32 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
 
     switch (category) {
       case 'performance':
+        // 大きな画像の最適化提案
+        if (issues?.allImages) {
+          const largeImages = issues.allImages.filter((img: any) => 
+            (img.width > 1920 || img.height > 1080) && img.filename
+          );
+          if (largeImages.length > 0) {
+            largeImages.slice(0, 3).forEach((img: any) => {
+              recommendations.push(`大きな画像を最適化: **${img.filename}** (${img.width}×${img.height}px)`);
+            });
+            if (largeImages.length > 3) {
+              recommendations.push(`他 ${largeImages.length - 3}個の大きな画像も最適化が必要`);
+            }
+          }
+        }
+        
+        // WebP形式への変換提案
+        if (issues?.allImages) {
+          const nonWebPImages = issues.allImages.filter((img: any) => 
+            img.filename && !img.filename.toLowerCase().includes('.webp')
+          );
+          if (nonWebPImages.length > 3) {
+            recommendations.push(`${nonWebPImages.length}個の画像をWebP形式に変換を検討`);
+          }
+        }
+
         if (score < 50) {
-          recommendations.push('画像の最適化（WebP形式への変換）');
           recommendations.push('未使用CSSの削除');
           recommendations.push('JavaScript分割の実装');
         } else if (score < 90) {
@@ -55,36 +79,109 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
         break;
       
       case 'accessibility':
-        if (issues?.images?.some((img: any) => !img.hasAlt)) {
-          recommendations.push('すべての画像にalt属性を追加');
+        // alt属性がない画像の具体的な指摘
+        if (issues?.images) {
+          const noAltImages = issues.images.filter((issue: any) => 
+            issue.type === 'no-alt' && issue.src
+          );
+          noAltImages.slice(0, 5).forEach((issue: any) => {
+            const filename = issue.src.split('/').pop() || issue.src;
+            recommendations.push(`alt属性を追加: **${filename}**`);
+          });
+          if (noAltImages.length > 5) {
+            recommendations.push(`他 ${noAltImages.length - 5}個の画像にもalt属性が必要`);
+          }
         }
-        if (issues?.accessibility?.axe?.length > 0) {
-          recommendations.push('色のコントラスト比を改善');
-          recommendations.push('フォーカス可能な要素の明確化');
+
+        // axeアクセシビリティ違反の具体的な指摘
+        if (issues?.accessibility?.axe) {
+          issues.accessibility.axe.forEach((violation: any) => {
+            if (violation.impact === 'critical' || violation.impact === 'serious') {
+              recommendations.push(`${violation.help}`);
+            }
+          });
         }
-        if (score < 90) {
-          recommendations.push('見出し構造の適切な階層化');
+
+        // 見出し構造の問題
+        if (issues?.headings) {
+          const headingIssues = issues.headings.filter((issue: any) => 
+            issue.type === 'skip-level' || issue.type === 'empty-heading'
+          );
+          if (headingIssues.length > 0) {
+            recommendations.push('見出し構造の階層を修正（h1→h2→h3の順序で使用）');
+          }
         }
         break;
       
       case 'seo':
-        if (issues?.meta?.some((meta: any) => meta.type === 'title')) {
-          recommendations.push('適切なタイトルタグの設定');
+        // メタ情報の具体的な問題
+        if (issues?.meta) {
+          const titleIssues = issues.meta.filter((meta: any) => meta.type === 'title');
+          if (titleIssues.length > 0) {
+            titleIssues.forEach((issue: any) => {
+              recommendations.push(`タイトルタグを修正: ${issue.message}`);
+            });
+          }
+
+          const descIssues = issues.meta.filter((meta: any) => meta.type === 'description');
+          if (descIssues.length > 0) {
+            descIssues.forEach((issue: any) => {
+              recommendations.push(`メタディスクリプションを修正: ${issue.message}`);
+            });
+          }
         }
-        if (issues?.meta?.some((meta: any) => meta.type === 'description')) {
-          recommendations.push('メタディスクリプションの最適化');
+
+        // 見出し構造の問題
+        if (issues?.headings) {
+          const h1Issues = issues.headings.filter((issue: any) => 
+            issue.type === 'multiple-h1' || issue.type === 'no-h1'
+          );
+          if (h1Issues.length > 0) {
+            recommendations.push('h1タグを1つだけ適切に配置');
+          }
         }
-        if (score < 90) {
-          recommendations.push('見出しタグ（h1-h6）の適切な使用');
-          recommendations.push('内部リンクの最適化');
+
+        // リンクの問題
+        if (issues?.links) {
+          const linkIssues = issues.links.filter((issue: any) => 
+            issue.type === 'empty-link-text'
+          );
+          if (linkIssues.length > 0) {
+            recommendations.push(`${linkIssues.length}個のリンクに適切なテキストを追加`);
+          }
         }
         break;
       
       case 'bestpractices':
-        if (score < 90) {
-          recommendations.push('HTTPSの使用');
-          recommendations.push('画像の適切なサイズ設定');
-          recommendations.push('外部リンクのセキュリティ対策');
+        // 画像のサイズ問題
+        if (issues?.images) {
+          const sizeIssues = issues.images.filter((issue: any) => 
+            issue.type === 'no-dimensions'
+          );
+          if (sizeIssues.length > 0) {
+            sizeIssues.slice(0, 3).forEach((issue: any) => {
+              const filename = issue.src?.split('/').pop() || 'unknown';
+              recommendations.push(`画像のサイズ属性を追加: **${filename}**`);
+            });
+            if (sizeIssues.length > 3) {
+              recommendations.push(`他 ${sizeIssues.length - 3}個の画像にもサイズ属性が必要`);
+            }
+          }
+        }
+
+        // HTTPSの使用
+        if (data.url && !data.url.startsWith('https://')) {
+          recommendations.push('HTTPSの使用を推奨');
+        }
+
+        // 外部リンクのセキュリティ
+        if (issues?.links) {
+          const externalLinks = issues.links.filter((issue: any) => 
+            issue.href && issue.href.startsWith('http') && !issue.href.includes(new URL(data.url).hostname)
+          );
+          if (externalLinks.length > 0) {
+            recommendations.push('外部リンクにrel="noopener noreferrer"を追加');
+          }
         }
         break;
     }
