@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import type { TabType, CheckResult, Issue, Heading, ImageInfo, BasicAuth, MetaInfo, ConsoleError } from '../types/index.js';
-import { ExternalLink, AlertTriangle, AlertCircle, Info, Image as ImageIcon, FileText, Eye, Terminal, Clock, LinkIcon, Target, Zap } from 'lucide-react';
+import { ExternalLink, AlertTriangle, AlertCircle, Info, Image as ImageIcon, FileText, Eye, Terminal, Clock, LinkIcon } from 'lucide-react';
 import { Modal } from './Modal.js';
 import { getProxiedImageUrl, isValidImageUrl } from '../utils/imageUtils.js';
 import { getAxeTranslation, translateImpact, translateWcagTag } from '../constants/axeTranslations.js';
-import { highlightElement, flashHighlight, showElementOverlay, clearHighlights } from '../utils/elementHighlight.js';
 
 interface TabContentProps {
   activeTab: TabType;
@@ -504,202 +503,6 @@ export const TabContent: React.FC<TabContentProps> = ({
   const renderAccessibilityIssues = () => {
     const { lighthouse, axe } = issues.accessibility;
 
-    // ページ上の要素をハイライトする関数
-    const handleHighlightElement = (target, severity = 'error') => {
-      console.log('=== ハイライト要求開始 ===');
-      console.log('target:', target);
-      console.log('severity:', severity);
-      console.log('target type:', typeof target);
-      console.log('target length:', target?.length);
-      
-      // まずは必ずデモハイライトを表示
-      console.log('デモハイライト表示開始');
-      createDemoHighlight(severity);
-      
-      // target情報がある場合は実際のハイライトも試行
-      if (target && target.length > 0) {
-        console.log('実際のハイライト試行開始');
-        try {
-          flashHighlight(target, severity);
-          console.log('実際のハイライト成功');
-        } catch (error) {
-          console.error('実際のハイライトエラー:', error);
-        }
-      }
-      
-      console.log('=== ハイライト要求終了 ===');
-    };
-
-    // 要素の詳細を表示する関数
-    const handleShowElementDetail = (target, violation) => {
-      console.log('=== 詳細表示要求開始 ===');
-      console.log('target:', target);
-      console.log('violation:', violation);
-      
-      // まずは必ずデモ詳細を表示
-      console.log('デモ詳細表示開始');
-      createDemoDetail(violation);
-      
-      // target情報がある場合は実際の詳細表示も試行
-      if (target && target.length > 0) {
-        console.log('実際の詳細表示試行開始');
-        try {
-          showElementOverlay(target, {
-            rule: violation.id,
-            message: getAxeTranslation(violation.id).help,
-            impact: translateImpact(violation.impact)
-          });
-          console.log('実際の詳細表示成功');
-        } catch (error) {
-          console.error('実際の詳細表示エラー:', error);
-        }
-      }
-      
-      console.log('=== 詳細表示要求終了 ===');
-    };
-
-    // デモンストレーション用のハイライト表示
-    const createDemoHighlight = (severity: string) => {
-      console.log('createDemoHighlight実行開始, severity:', severity);
-      
-      try {
-        // 既存のデモハイライトを削除
-        const existing = document.querySelector('.demo-highlight-overlay');
-        if (existing) {
-          console.log('既存のデモハイライトを削除');
-          existing.remove();
-        }
-
-        // 画面中央にデモハイライトを作成
-        console.log('新しいデモハイライトを作成中...');
-        const overlay = document.createElement('div');
-        overlay.className = 'demo-highlight-overlay';
-        
-        const color = getSeverityColor(severity);
-        console.log('severity color:', color);
-        
-        overlay.style.cssText = `
-          position: fixed !important;
-          top: 50% !important;
-          left: 50% !important;
-          transform: translate(-50%, -50%) !important;
-          width: 300px !important;
-          height: 100px !important;
-          background: ${color}40 !important;
-          border: 3px solid ${color} !important;
-          border-radius: 8px !important;
-          z-index: 10000 !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          color: ${color} !important;
-          font-weight: bold !important;
-          font-size: 16px !important;
-          animation: demoHighlightPulse 2s ease-in-out infinite !important;
-          pointer-events: none !important;
-          font-family: Arial, sans-serif !important;
-        `;
-        
-        const impactText = translateImpact(severity);
-        overlay.textContent = `${impactText}な問題をハイライト中...`;
-        console.log('オーバーレイテキスト:', overlay.textContent);
-
-        document.body.appendChild(overlay);
-        console.log('オーバーレイをbodyに追加完了');
-        
-        // デバッグ: 要素が実際に存在するか確認
-        const added = document.querySelector('.demo-highlight-overlay');
-        console.log('追加された要素:', added);
-        console.log('要素のスタイル:', added?.style.cssText);
-
-        // 3秒後に削除
-        setTimeout(() => {
-          console.log('3秒経過、オーバーレイ削除中...');
-          if (overlay.parentNode) {
-            overlay.remove();
-            console.log('オーバーレイ削除完了');
-          }
-        }, 3000);
-        
-      } catch (error) {
-        console.error('createDemoHighlightエラー:', error);
-        // 最もシンプルなフォールバック
-        alert(`${translateImpact(severity)}な問題のデモハイライト表示`);
-      }
-    };
-
-    // デモンストレーション用の詳細表示
-    const createDemoDetail = (violation: any) => {
-      // 既存のデモ詳細を削除
-      const existing = document.querySelector('.demo-detail-overlay');
-      if (existing) existing.remove();
-
-      const overlay = document.createElement('div');
-      overlay.className = 'demo-detail-overlay';
-      overlay.style.cssText = `
-        position: fixed;
-        top: 20%;
-        left: 50%;
-        transform: translateX(-50%);
-        background: white;
-        border: 2px solid #2563eb;
-        border-radius: 12px;
-        padding: 20px;
-        max-width: 400px;
-        z-index: 10001;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        animation: demoDetailSlide 0.3s ease-out;
-      `;
-
-      const translation = getAxeTranslation(violation.id);
-      overlay.innerHTML = `
-        <div style="margin-bottom: 15px;">
-          <strong style="color: #2563eb; font-size: 18px;">📍 問題の詳細</strong>
-        </div>
-        <div style="margin-bottom: 10px;">
-          <strong>ルール:</strong> ${violation.id}
-        </div>
-        <div style="margin-bottom: 10px;">
-          <strong>影響レベル:</strong> 
-          <span style="background: ${getSeverityColor(violation.impact)}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">
-            ${translateImpact(violation.impact)}
-          </span>
-        </div>
-        <div style="margin-bottom: 15px;">
-          <strong>説明:</strong> ${translation.help}
-        </div>
-        <button onclick="this.parentElement.remove()" style="
-          background: #2563eb; 
-          color: white; 
-          border: none; 
-          padding: 8px 16px; 
-          border-radius: 6px; 
-          cursor: pointer;
-          font-size: 14px;
-        ">閉じる</button>
-      `;
-
-      document.body.appendChild(overlay);
-
-      // 5秒後に自動削除
-      setTimeout(() => {
-        if (overlay.parentNode) {
-          overlay.remove();
-        }
-      }, 5000);
-    };
-
-    // 重要度に応じた色を取得
-    const getSeverityColor = (impact: string): string => {
-      switch (impact) {
-        case 'critical': return '#dc2626';
-        case 'serious': return '#ea580c';
-        case 'moderate': return '#d97706';
-        case 'minor': return '#16a34a';
-        default: return '#6b7280';
-      }
-    };
-
     return (
       <div className="accessibility-content-modern">
         {lighthouse.length > 0 && (
@@ -721,15 +524,6 @@ export const TabContent: React.FC<TabContentProps> = ({
                     </span>
                   </div>
                   <p className="accessibility-description">{issue.description}</p>
-                  <div className="accessibility-actions">
-                    <button
-                      className="detail-button-modern"
-                      onClick={() => setSelectedIssue({ ...issue, type: 'Lighthouse' })}
-                    >
-                      <Eye size={14} />
-                      詳細を見る
-                    </button>
-                  </div>
                 </div>
               ))}
             </div>
@@ -811,56 +605,6 @@ export const TabContent: React.FC<TabContentProps> = ({
                       </div>
                     )}
                     
-                    <div className="accessibility-actions">
-                      {/* テスト用の基本ボタン */}
-                      <button
-                        className="highlight-button"
-                        onClick={() => {
-                          console.log('テストボタンクリック!');
-                          alert('テストボタンが動作しました！');
-                        }}
-                        style={{ marginRight: '10px' }}
-                      >
-                        🧪 テスト
-                      </button>
-                      
-                      {/* 要素をハイライト表示ボタン */}
-                      <button
-                        className="highlight-button"
-                        onClick={() => {
-                          console.log('ハイライトボタンクリック!');
-                          handleHighlightElement(violation.target, violation.impact);
-                        }}
-                        title={`ページ上の問題のある要素をハイライト表示${violation.target ? ` (セレクター: ${violation.target[0]})` : ' (デモ表示)'}`}
-                      >
-                        <Target size={14} />
-                        要素を表示
-                      </button>
-                      
-                      {/* フラッシュハイライトボタン */}
-                      <button
-                        className="flash-button"
-                        onClick={() => {
-                          console.log('詳細位置ボタンクリック!');
-                          handleShowElementDetail(violation.target, violation);
-                        }}
-                        title={`要素の詳細情報を表示${violation.target ? ` (セレクター: ${violation.target[0]})` : ' (デモ表示)'}`}
-                      >
-                        <Zap size={14} />
-                        詳細位置
-                      </button>
-                      
-                      <button
-                        className="detail-button-modern"
-                        onClick={() => {
-                          console.log('詳細を見るボタンクリック!');
-                          setSelectedIssue({ ...violation, type: 'WCAG', translation });
-                        }}
-                      >
-                        <Eye size={14} />
-                        詳細を見る
-                      </button>
-                    </div>
 
                     {/* デバッグ情報 */}
                     {process.env.NODE_ENV === 'development' && (

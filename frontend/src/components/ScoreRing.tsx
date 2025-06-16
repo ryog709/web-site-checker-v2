@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { AlertCircle, ChevronUp, ChevronDown } from 'lucide-react';
+import { AlertCircle, ChevronUp, ChevronDown, ExternalLink } from 'lucide-react';
+import type { RecommendationDetail } from '../types/index.js';
 
 interface ScoreRingProps {
   score: number;
@@ -7,6 +8,7 @@ interface ScoreRingProps {
   color: string;
   size?: number;
   recommendations?: string[];
+  recommendationDetails?: RecommendationDetail[];
 }
 
 export const ScoreRing: React.FC<ScoreRingProps> = ({
@@ -14,8 +16,10 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({
   label,
   size = 120,
   recommendations = [],
+  recommendationDetails = [],
 }) => {
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [selectedDetail, setSelectedDetail] = useState<RecommendationDetail | null>(null);
   const radius = (size - 12) / 2;
   const circumference = 2 * Math.PI * radius;
   const strokeDasharray = circumference;
@@ -99,12 +103,80 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({
           {showRecommendations && (
             <div className="recommendations-list">
               <ul>
-                {recommendations.map((recommendation, index) => (
-                  <li key={index} dangerouslySetInnerHTML={{
-                    __html: recommendation.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                  }} />
-                ))}
+                {recommendations.map((recommendation, index) => {
+                  const hasDetail = recommendationDetails[index];
+                  return (
+                    <li key={index}>
+                      <div className="recommendation-item">
+                        <span dangerouslySetInnerHTML={{
+                          __html: recommendation.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        }} />
+                        {hasDetail && (
+                          <button
+                            className="detail-button"
+                            onClick={() => setSelectedDetail(hasDetail)}
+                            title="詳細を表示"
+                          >
+                            <ExternalLink size={12} />
+                          </button>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
+            </div>
+          )}
+          
+          {selectedDetail && (
+            <div className="modal-overlay" onClick={() => setSelectedDetail(null)}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h3>{selectedDetail.title}</h3>
+                  <button 
+                    className="modal-close"
+                    onClick={() => setSelectedDetail(null)}
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="modal-body">
+                  <p>{selectedDetail.description}</p>
+                  <div className="detail-items">
+                    {selectedDetail.items.map((item, index) => (
+                      <div key={index} className="detail-item">
+                        {item.filename && (
+                          <div className="item-filename">
+                            <strong>ファイル:</strong> {item.filename}
+                          </div>
+                        )}
+                        {item.src && (
+                          <div className="item-src">
+                            <strong>パス:</strong> 
+                            <code>{item.src}</code>
+                          </div>
+                        )}
+                        {item.element && (
+                          <div className="item-element">
+                            <strong>要素:</strong> 
+                            <code>{item.element}</code>
+                          </div>
+                        )}
+                        {item.details && (
+                          <div className="item-details">
+                            <strong>詳細:</strong> {item.details}
+                          </div>
+                        )}
+                        {item.location && (
+                          <div className="item-location">
+                            <strong>場所:</strong> {item.location}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>

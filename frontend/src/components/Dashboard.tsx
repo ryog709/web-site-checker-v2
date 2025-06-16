@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { CheckResult, CrawlResult, TabType } from '../types/index.js';
+import type { CheckResult, CrawlResult, TabType, RecommendationDetail } from '../types/index.js';
 import { ScoreRing } from './ScoreRing.js';
 import { SummaryCards } from './SummaryCards.js';
 import { TabNavigation } from './TabNavigation.js';
@@ -41,6 +41,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
   // 改善提案を生成
   const getRecommendations = (category: string, score: number, issues: any) => {
     const recommendations: string[] = [];
+    const details: RecommendationDetail[] = [];
 
     switch (category) {
       case 'performance':
@@ -66,6 +67,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
           );
           if (nonWebPImages.length > 3) {
             recommendations.push(`${nonWebPImages.length}個の画像をWebP形式に変換を検討`);
+            details.push({
+              id: 'webp-conversion',
+              title: 'WebP形式への変換',
+              description: '次の画像をWebP形式に変換することで、ファイルサイズを大幅に削減できます。',
+              items: nonWebPImages.slice(0, 10).map((img: any) => ({
+                filename: img.filename,
+                src: img.src,
+                details: `現在のサイズ: ${img.width}×${img.height}px`,
+                location: `img要素 (${img.index + 1}番目)`
+              }))
+            });
           }
         }
 
@@ -74,7 +86,35 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
           recommendations.push('JavaScript分割の実装');
         } else if (score < 90) {
           recommendations.push('画像の遅延読み込み実装');
+          details.push({
+            id: 'lazy-loading',
+            title: '画像の遅延読み込み実装',
+            description: '以下の画像に遅延読み込み（lazy loading）を実装することで、初期ページ読み込み速度を向上できます。',
+            items: (issues?.allImages || []).slice(0, 8).map((img: any, index: number) => ({
+              filename: img.filename,
+              src: img.src,
+              element: `<img src="${img.src}" loading="lazy" alt="${img.alt}">`,
+              details: 'loading="lazy"属性を追加',
+              location: `${index + 1}番目の画像`
+            }))
+          });
+          
           recommendations.push('CDNの活用検討');
+          details.push({
+            id: 'cdn-usage',
+            title: 'CDNの活用検討',
+            description: '静的リソースをCDNから配信することで、読み込み速度を向上できます。',
+            items: [
+              {
+                details: '画像ファイルをCDNから配信',
+                location: '全ての画像ファイル'
+              },
+              {
+                details: 'CSS/JavaScriptファイルをCDNから配信',
+                location: '外部ライブラリファイル'
+              }
+            ]
+          });
         }
         break;
       
@@ -84,12 +124,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
           const noAltImages = issues.images.filter((issue: any) => 
             issue.type === 'no-alt' && issue.src
           );
-          noAltImages.slice(0, 5).forEach((issue: any) => {
-            const filename = issue.src.split('/').pop() || issue.src;
-            recommendations.push(`alt属性を追加: **${filename}**`);
-          });
-          if (noAltImages.length > 5) {
-            recommendations.push(`他 ${noAltImages.length - 5}個の画像にもalt属性が必要`);
+          if (noAltImages.length > 0) {
+            recommendations.push(`${noAltImages.length}個の画像にalt属性を追加`);
+            details.push({
+              id: 'missing-alt',
+              title: 'alt属性の追加',
+              description: '以下の画像にalt属性を追加して、スクリーンリーダーでも内容が伝わるようにしてください。',
+              items: noAltImages.slice(0, 10).map((issue: any) => {
+                const filename = issue.src.split('/').pop() || issue.src;
+                return {
+                  filename: filename,
+                  src: issue.src,
+                  element: `<img src="${issue.src}" alt="適切な説明文">`,
+                  details: 'alt属性に画像の内容を説明するテキストを追加',
+                  location: `${issue.position || '不明'}番目の画像`
+                };
+              })
+            });
           }
         }
 
@@ -186,7 +237,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
         break;
     }
 
-    return recommendations;
+    return { recommendations, details };
   };
 
   if (!data || data.error) {
@@ -431,30 +482,54 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
               <div className="scores-section">
                 <h3>Lighthouseスコア</h3>
                 <div className="score-rings">
-                  <ScoreRing
-                    score={scores.performance}
-                    label="Performance"
-                    color="--score-performance"
-                    recommendations={getRecommendations('performance', scores.performance, data.issues)}
-                  />
-                  <ScoreRing
-                    score={scores.accessibility}
-                    label="Accessibility"
-                    color="--score-accessibility"
-                    recommendations={getRecommendations('accessibility', scores.accessibility, data.issues)}
-                  />
-                  <ScoreRing
-                    score={scores.bestpractices}
-                    label="Best Practices"
-                    color="--score-best-practices"
-                    recommendations={getRecommendations('bestpractices', scores.bestpractices, data.issues)}
-                  />
-                  <ScoreRing
-                    score={scores.seo}
-                    label="SEO"
-                    color="--score-seo"
-                    recommendations={getRecommendations('seo', scores.seo, data.issues)}
-                  />
+                  {(() => {
+                    const perfData = getRecommendations('performance', scores.performance, data.issues);
+                    return (
+                      <ScoreRing
+                        score={scores.performance}
+                        label="Performance"
+                        color="--score-performance"
+                        recommendations={perfData.recommendations}
+                        recommendationDetails={perfData.details}
+                      />
+                    );
+                  })()}
+                  {(() => {
+                    const a11yData = getRecommendations('accessibility', scores.accessibility, data.issues);
+                    return (
+                      <ScoreRing
+                        score={scores.accessibility}
+                        label="Accessibility"
+                        color="--score-accessibility"
+                        recommendations={a11yData.recommendations}
+                        recommendationDetails={a11yData.details}
+                      />
+                    );
+                  })()}
+                  {(() => {
+                    const bpData = getRecommendations('bestpractices', scores.bestpractices, data.issues);
+                    return (
+                      <ScoreRing
+                        score={scores.bestpractices}
+                        label="Best Practices"
+                        color="--score-best-practices"
+                        recommendations={bpData.recommendations}
+                        recommendationDetails={bpData.details}
+                      />
+                    );
+                  })()}
+                  {(() => {
+                    const seoData = getRecommendations('seo', scores.seo, data.issues);
+                    return (
+                      <ScoreRing
+                        score={scores.seo}
+                        label="SEO"
+                        color="--score-seo"
+                        recommendations={seoData.recommendations}
+                        recommendationDetails={seoData.details}
+                      />
+                    );
+                  })()}
                 </div>
               </div>
 

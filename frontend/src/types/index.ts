@@ -5,9 +5,24 @@ export interface LighthouseScores {
   seo: number;
 }
 
+export interface RecommendationDetail {
+  id: string;
+  title: string;
+  description: string;
+  items: Array<{
+    filename?: string;
+    src?: string;
+    element?: string;
+    details?: string;
+    location?: string;
+  }>;
+}
+
 export interface ScoreRecommendation {
   category: 'performance' | 'accessibility' | 'bestpractices' | 'seo';
-  suggestions: string[];
+  title: string;
+  hasDetails: boolean;
+  details?: RecommendationDetail[];
 }
 
 export interface ImageInfo {
