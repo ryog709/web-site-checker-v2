@@ -101,7 +101,7 @@ export async function crawlSite(startUrl, urls = null, auth = null) {
         const batchPromises = batch.map(url =>
             checkSinglePage(url, auth).catch(error => ({
                 url,
-                error: error.message,
+                error: error?.message || 'Unknown error occurred',
                 timestamp: new Date().toISOString()
             }))
         );
@@ -132,7 +132,22 @@ async function runLighthouse(url, auth = null, browser = null) {
     try {
         // Puppeteerブラウザが提供されている場合はそれを使用
         if (browser) {
+            // WebSocket URLが利用可能かチェック
             const endpoint = browser.wsEndpoint();
+            if (!endpoint) {
+                console.warn('Browser WebSocket endpoint not available, falling back to basic scores');
+                return await calculateBasicScores(url, browser);
+            }
+
+            // URLからポート番号を抽出
+            const wsUrl = new URL(endpoint);
+            const port = parseInt(wsUrl.port);
+            
+            if (!port || isNaN(port)) {
+                console.warn('Invalid port from WebSocket URL, falling back to basic scores');
+                return await calculateBasicScores(url, browser);
+            }
+
             const {
                 lhr
             } = await lighthouse(url, {
@@ -164,7 +179,7 @@ async function runLighthouse(url, auth = null, browser = null) {
                     })
                 }
             }, {
-                port: new URL(endpoint).port
+                port: port
             });
 
             // スコアを0-100スケールに変換
@@ -281,7 +296,12 @@ async function runAxeCore(page) {
 
     try {
         const results = await new AxePuppeteer(page)
-            .withRules(['wcag2a', 'wcag2aa'])
+            .options({
+                runOnly: {
+                    type: 'tag',
+                    values: ['wcag2a', 'wcag2aa']
+                }
+            })
             .analyze();
 
         return results.violations.map(violation => ({
@@ -1183,8 +1203,8 @@ async function collectConsoleErrors(page) {
         errorPage.on('pageerror', error => {
             consoleErrors.push({
                 type: 'javascript-error',
-                message: error.message,
-                stack: error.stack,
+                message: error?.message || 'JavaScript error occurred',
+                stack: error?.stack || '',
                 timestamp: new Date().toISOString(),
                 severity: 'error'
             });
