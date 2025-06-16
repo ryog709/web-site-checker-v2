@@ -38,6 +38,60 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
     seo: data?.scores?.seo ?? 0
   };
 
+  // 改善提案を生成
+  const getRecommendations = (category: string, score: number, issues: any) => {
+    const recommendations: string[] = [];
+
+    switch (category) {
+      case 'performance':
+        if (score < 50) {
+          recommendations.push('画像の最適化（WebP形式への変換）');
+          recommendations.push('未使用CSSの削除');
+          recommendations.push('JavaScript分割の実装');
+        } else if (score < 90) {
+          recommendations.push('画像の遅延読み込み実装');
+          recommendations.push('CDNの活用検討');
+        }
+        break;
+      
+      case 'accessibility':
+        if (issues?.images?.some((img: any) => !img.hasAlt)) {
+          recommendations.push('すべての画像にalt属性を追加');
+        }
+        if (issues?.accessibility?.axe?.length > 0) {
+          recommendations.push('色のコントラスト比を改善');
+          recommendations.push('フォーカス可能な要素の明確化');
+        }
+        if (score < 90) {
+          recommendations.push('見出し構造の適切な階層化');
+        }
+        break;
+      
+      case 'seo':
+        if (issues?.meta?.some((meta: any) => meta.type === 'title')) {
+          recommendations.push('適切なタイトルタグの設定');
+        }
+        if (issues?.meta?.some((meta: any) => meta.type === 'description')) {
+          recommendations.push('メタディスクリプションの最適化');
+        }
+        if (score < 90) {
+          recommendations.push('見出しタグ（h1-h6）の適切な使用');
+          recommendations.push('内部リンクの最適化');
+        }
+        break;
+      
+      case 'bestpractices':
+        if (score < 90) {
+          recommendations.push('HTTPSの使用');
+          recommendations.push('画像の適切なサイズ設定');
+          recommendations.push('外部リンクのセキュリティ対策');
+        }
+        break;
+    }
+
+    return recommendations;
+  };
+
   if (!data || data.error) {
     return (
       <div className="dashboard error-state">
@@ -284,21 +338,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
                     score={scores.performance}
                     label="Performance"
                     color="--score-performance"
+                    recommendations={getRecommendations('performance', scores.performance, data.issues)}
                   />
                   <ScoreRing
                     score={scores.accessibility}
                     label="Accessibility"
                     color="--score-accessibility"
+                    recommendations={getRecommendations('accessibility', scores.accessibility, data.issues)}
                   />
                   <ScoreRing
                     score={scores.bestpractices}
                     label="Best Practices"
                     color="--score-best-practices"
+                    recommendations={getRecommendations('bestpractices', scores.bestpractices, data.issues)}
                   />
                   <ScoreRing
                     score={scores.seo}
                     label="SEO"
                     color="--score-seo"
+                    recommendations={getRecommendations('seo', scores.seo, data.issues)}
                   />
                 </div>
               </div>

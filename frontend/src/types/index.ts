@@ -5,6 +5,11 @@ export interface LighthouseScores {
   seo: number;
 }
 
+export interface ScoreRecommendation {
+  category: 'performance' | 'accessibility' | 'bestpractices' | 'seo';
+  suggestions: string[];
+}
+
 export interface ImageInfo {
   index: number;
   src: string;

@@ -318,10 +318,17 @@ body {
 }
 
 .score-rings {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--spacing-md);
-  justify-content: center;
+  justify-items: center;
+}
+
+.score-ring-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
 .score-ring {
@@ -336,6 +343,66 @@ body {
   font-weight: 500;
   color: var(--color-text-secondary);
   text-align: center;
+}
+
+.score-recommendations {
+  width: 100%;
+  max-width: 200px;
+}
+
+.recommendations-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  justify-content: center;
+}
+
+.recommendations-toggle:hover {
+  background: var(--color-background-hover);
+  color: var(--color-text-primary);
+}
+
+.recommendations-list {
+  margin-top: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.recommendations-list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recommendations-list li {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-xs);
+  padding-left: var(--spacing-sm);
+  position: relative;
+}
+
+.recommendations-list li:before {
+  content: "•";
+  color: var(--color-warning);
+  position: absolute;
+  left: 0;
+}
+
+.recommendations-list li:last-child {
+  margin-bottom: 0;
 }
 
 /* Summary cards */
