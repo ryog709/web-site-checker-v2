@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import type { TabType, CheckResult, Issue, Heading, ImageInfo, BasicAuth, MetaInfo, ConsoleError } from '../types/index.js';
-import { ExternalLink, AlertTriangle, AlertCircle, Info, Image as ImageIcon, FileText, Eye, Terminal, Clock, LinkIcon } from 'lucide-react';
+import { ExternalLink, AlertTriangle, AlertCircle, Info, Image as ImageIcon, FileText, Eye, Terminal, Clock, LinkIcon, Target, Zap } from 'lucide-react';
 import { Modal } from './Modal.js';
 import { getProxiedImageUrl, isValidImageUrl } from '../utils/imageUtils.js';
+import { getAxeTranslation, translateImpact, translateWcagTag } from '../constants/axeTranslations.js';
+import { highlightElement, flashHighlight, showElementOverlay, clearHighlights } from '../utils/elementHighlight.js';
 
 interface TabContentProps {
   activeTab: TabType;
@@ -378,6 +380,24 @@ export const TabContent: React.FC<TabContentProps> = ({
   const renderAccessibilityIssues = () => {
     const { lighthouse, axe } = issues.accessibility;
 
+    // ページ上の要素をハイライトする関数
+    const handleHighlightElement = (target, severity = 'error') => {
+      if (target && target.length > 0) {
+        flashHighlight(target, severity);
+      }
+    };
+
+    // 要素の詳細を表示する関数
+    const handleShowElementDetail = (target, violation) => {
+      if (target && target.length > 0) {
+        showElementOverlay(target, {
+          rule: violation.id,
+          message: getAxeTranslation(violation.id).help,
+          impact: translateImpact(violation.impact)
+        });
+      }
+    };
+
     return (
       <div className="accessibility-content-modern">
         {lighthouse.length > 0 && (
@@ -395,17 +415,19 @@ export const TabContent: React.FC<TabContentProps> = ({
                   <div className="accessibility-header">
                     <h5>{issue.title}</h5>
                     <span className={`score-badge ${issue.score === 0 ? 'fail' : 'partial'}`}>
-                      {issue.score === 0 ? 'Failed' : 'Partial'}
+                      {issue.score === 0 ? '失敗' : '部分的'}
                     </span>
                   </div>
                   <p className="accessibility-description">{issue.description}</p>
-                  <button
-                    className="detail-button-modern"
-                    onClick={() => setSelectedIssue({ ...issue, type: 'Lighthouse' })}
-                  >
-                    <Eye size={14} />
-                    詳細を見る
-                  </button>
+                  <div className="accessibility-actions">
+                    <button
+                      className="detail-button-modern"
+                      onClick={() => setSelectedIssue({ ...issue, type: 'Lighthouse' })}
+                    >
+                      <Eye size={14} />
+                      詳細を見る
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -420,32 +442,88 @@ export const TabContent: React.FC<TabContentProps> = ({
                 <h4>WCAG 2.2 AA準拠チェック</h4>
                 <span className="count-badge error">{axe.length}</span>
               </div>
+              <p className="section-description">
+                Web Content Accessibility Guidelines 2.2に基づく自動アクセシビリティ診断結果
+              </p>
             </div>
             <div className="issues-grid">
-              {axe.map((violation, index) => (
-                <div key={index} className="accessibility-card axe">
-                  <div className="accessibility-header">
-                    <div className="violation-info">
-                      {getSeverityIcon(violation.impact)}
-                      <code className="violation-id">{violation.id}</code>
+              {axe.map((violation, index) => {
+                const translation = getAxeTranslation(violation.id);
+                return (
+                  <div key={index} className="accessibility-card axe">
+                    <div className="accessibility-header">
+                      <div className="violation-info">
+                        {getSeverityIcon(violation.impact)}
+                        <code className="violation-id">{violation.id}</code>
+                        <span className={`impact-badge impact-${violation.impact}`}>
+                          {translateImpact(violation.impact)}
+                        </span>
+                      </div>
+                      <span className="affected-elements">{violation.nodes}箇所で検出</span>
                     </div>
-                    <span className="affected-elements">{violation.nodes}個の要素</span>
+                    
+                    <h5 className="violation-help">{translation.help}</h5>
+                    <p className="violation-description">{translation.description}</p>
+                    
+                    {translation.fixHint && (
+                      <div className="fix-hint">
+                        <strong>💡 修正のヒント:</strong>
+                        <span>{translation.fixHint}</span>
+                      </div>
+                    )}
+                    
+                    <div className="violation-tags-modern">
+                      {violation.tags.slice(0, 4).map(tag => (
+                        <span key={tag} className="tag-modern">
+                          {translateWcagTag(tag) || tag}
+                        </span>
+                      ))}
+                    </div>
+                    
+                    <div className="accessibility-actions">
+                      {/* 要素をハイライト表示ボタン */}
+                      {violation.nodes > 0 && violation.target && (
+                        <button
+                          className="highlight-button"
+                          onClick={() => handleHighlightElement(violation.target, violation.impact)}
+                          title="ページ上の問題のある要素をハイライト表示"
+                        >
+                          <Target size={14} />
+                          要素を表示
+                        </button>
+                      )}
+                      
+                      {/* フラッシュハイライトボタン */}
+                      {violation.nodes > 0 && violation.target && (
+                        <button
+                          className="flash-button"
+                          onClick={() => handleShowElementDetail(violation.target, violation)}
+                          title="要素の詳細情報を表示"
+                        >
+                          <Zap size={14} />
+                          詳細位置
+                        </button>
+                      )}
+                      
+                      <button
+                        className="detail-button-modern"
+                        onClick={() => setSelectedIssue({ ...violation, type: 'WCAG', translation })}
+                      >
+                        <Eye size={14} />
+                        詳細を見る
+                      </button>
+                    </div>
+                    
+                    {/* 影響を受ける要素の数を詳細表示 */}
+                    {violation.nodes > 1 && (
+                      <div className="multiple-elements-info">
+                        <Info size={12} />
+                        <span>この問題は{violation.nodes}個の要素で発生しています</span>
+                      </div>
+                    )}
                   </div>
-                  <h5 className="violation-help">{violation.help}</h5>
-                  <div className="violation-tags-modern">
-                    {violation.tags.slice(0, 3).map(tag => (
-                      <span key={tag} className="tag-modern">{tag}</span>
-                    ))}
-                  </div>
-                  <button
-                    className="detail-button-modern"
-                    onClick={() => setSelectedIssue({ ...violation, type: 'WCAG' })}
-                  >
-                    <Eye size={14} />
-                    詳細を見る
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -972,27 +1050,62 @@ export const TabContent: React.FC<TabContentProps> = ({
           {isWCAG && (
             <>
               <div className="modal-section">
-                <strong>説明:</strong>
-                <p>{selectedIssue.description}</p>
+                <strong>問題の説明:</strong>
+                <p>{selectedIssue.translation?.description || selectedIssue.description}</p>
               </div>
+              
+              {selectedIssue.translation?.fixHint && (
+                <div className="modal-section fix-hint-section">
+                  <strong>💡 修正のヒント:</strong>
+                  <p>{selectedIssue.translation.fixHint}</p>
+                </div>
+              )}
+              
               <div className="modal-section">
                 <strong>影響レベル:</strong>
                 <span className={`impact-badge impact-${selectedIssue.impact}`}>
-                  {selectedIssue.impact}
+                  {translateImpact(selectedIssue.impact)}
                 </span>
               </div>
+              
               <div className="modal-section">
                 <strong>影響要素数:</strong>
-                <span className="affected-count">{selectedIssue.nodes}個</span>
+                <span className="affected-count">{selectedIssue.nodes}箇所</span>
               </div>
+              
+              <div className="modal-section">
+                <strong>ルールID:</strong>
+                <code className="rule-id">{selectedIssue.id}</code>
+              </div>
+              
               <div className="modal-section">
                 <strong>関連ガイドライン:</strong>
                 <div className="tags-list-modern">
                   {selectedIssue.tags.map((tag: string) => (
-                    <span key={tag} className="tag-modern">{tag}</span>
+                    <span key={tag} className="tag-modern">
+                      {translateWcagTag(tag) || tag}
+                    </span>
                   ))}
                 </div>
               </div>
+              
+              {/* 要素のハイライト機能をモーダル内でも提供 */}
+              {selectedIssue.target && (
+                <div className="modal-actions">
+                  <button
+                    className="highlight-button modal-highlight"
+                    onClick={() => {
+                      flashHighlight(selectedIssue.target, selectedIssue.impact);
+                      // モーダルを閉じて要素を見やすくする
+                      setSelectedIssue(null);
+                    }}
+                  >
+                    <Target size={16} />
+                    ページ上で要素を表示
+                  </button>
+                </div>
+              )}
+              
               {selectedIssue.helpUrl && (
                 <a
                   href={selectedIssue.helpUrl}
@@ -1001,7 +1114,7 @@ export const TabContent: React.FC<TabContentProps> = ({
                   className="external-link-modern"
                 >
                   <ExternalLink size={16} />
-                  詳細情報を見る
+                  WCAG公式ガイドラインを見る
                 </a>
               )}
             </>

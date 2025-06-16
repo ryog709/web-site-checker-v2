@@ -69,6 +69,7 @@ export interface AxeViolation {
   helpUrl: string;
   tags: string[];
   nodes: number;
+  target?: string[]; // ハイライト機能で使用する要素セレクター
 }
 
 export interface ConsoleError {
