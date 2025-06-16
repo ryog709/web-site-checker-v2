@@ -19,6 +19,13 @@ export const axeTranslations = {
     description: '画像にalt属性がないと、スクリーンリーダーユーザーが画像の内容を理解できません。',
     fixHint: '画像にalt属性を追加し、画像の内容や目的を説明してください。装飾的な画像の場合はalt=""を使用してください。'
   },
+  
+  // SVG関連
+  'SVGアクセシビリティ': {
+    help: 'SVGには適切なアクセシビリティ属性が必要です',
+    description: 'SVG要素にアクセシブルな説明がないと、スクリーンリーダーユーザーがSVGの内容や目的を理解できません。',
+    fixHint: '装飾目的のSVGには role="presentation" を追加してください。意味のあるSVGには aria-label または <title> 要素を追加してください。'
+  },
   'image-redundant-alt': {
     help: '画像の代替テキストに冗長な文言を含めてはいけません',
     description: 'alt属性に「画像」や「写真」などの冗長な文言が含まれています。',

@@ -599,16 +599,22 @@ function analyzeImages($) {
         // 2. role="presentation" (装飾的な場合)
         // 3. aria-labelledby で説明要素を参照
         if (role !== 'img' && role !== 'presentation' && !ariaLabel && !ariaLabelledby && !title) {
+            const classAttr = $svg.attr('class');
+            const id = $svg.attr('id');
+            
             issues.push({
                 type: 'SVGアクセシビリティ',
                 element: 'svg',
-                message: 'SVGにアクセシブルな説明（aria-label、title、またはrole="presentation"）が設定されていません',
+                message: 'SVGにアクセシブルな説明が設定されていません。装飾目的なら role="presentation" を追加してください。',
                 severity: 'warning',
                 details: {
                     role: role,
                     ariaLabel: ariaLabel,
                     ariaLabelledby: ariaLabelledby,
-                    hasTitle: !!title
+                    hasTitle: !!title,
+                    class: classAttr,
+                    id: id,
+                    suggestion: '装飾目的なら <svg role="presentation" ...> を追加。意味があるSVGなら aria-label または <title> を追加。'
                 }
             });
         }
