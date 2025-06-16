@@ -311,7 +311,8 @@ async function runAxeCore(page) {
             help: violation.help,
             helpUrl: violation.helpUrl,
             tags: violation.tags,
-            nodes: violation.nodes.length
+            nodes: violation.nodes.length,
+            target: violation.nodes.length > 0 && violation.nodes[0].target ? violation.nodes[0].target : null
         }));
     } catch (error) {
         console.warn('axe-core analysis failed:', error.message);

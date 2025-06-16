@@ -12,12 +12,136 @@ interface TabContentProps {
   auth?: BasicAuth;
 }
 
+// セレクターから検索しやすい情報を抽出する関数
+const extractSearchableInfo = (selector: string, ruleId: string): string[] => {
+  const searchableItems: string[] = [];
+  
+  // クラス名を抽出
+  const classMatches = selector.match(/\.([a-zA-Z0-9_-]+)/g);
+  if (classMatches) {
+    classMatches.forEach(match => {
+      const className = match.substring(1); // ドットを除去
+      searchableItems.push(`class="${className}"`);
+      searchableItems.push(`className="${className}"`);
+      searchableItems.push(className);
+    });
+  }
+  
+  // ID名を抽出
+  const idMatches = selector.match(/#([a-zA-Z0-9_-]+)/g);
+  if (idMatches) {
+    idMatches.forEach(match => {
+      const idName = match.substring(1); // #を除去
+      searchableItems.push(`id="${idName}"`);
+      searchableItems.push(idName);
+    });
+  }
+  
+  // 要素名を抽出（問題の種類に応じて）
+  if (ruleId === 'button-name') {
+    const buttonMatches = selector.match(/button/gi);
+    if (buttonMatches) {
+      searchableItems.push('<button');
+      searchableItems.push('button');
+      searchableItems.push('type="button"');
+      searchableItems.push('type="submit"');
+    }
+    
+    // input[type="button"]やinput[type="submit"]も対象
+    if (selector.includes('input')) {
+      searchableItems.push('<input');
+      searchableItems.push('type="button"');
+      searchableItems.push('type="submit"');
+      searchableItems.push('type="image"');
+    }
+  }
+  
+  // link-name問題の場合
+  if (ruleId === 'link-name') {
+    if (selector.includes('a')) {
+      searchableItems.push('<a');
+      searchableItems.push('href=');
+      searchableItems.push('link');
+    }
+  }
+  
+  // image-alt問題の場合
+  if (ruleId === 'image-alt') {
+    if (selector.includes('img')) {
+      searchableItems.push('<img');
+      searchableItems.push('src=');
+      searchableItems.push('alt=');
+    }
+  }
+  
+  // label問題の場合
+  if (ruleId === 'label') {
+    if (selector.includes('input')) {
+      searchableItems.push('<input');
+      searchableItems.push('name=');
+      searchableItems.push('id=');
+    }
+    if (selector.includes('select')) {
+      searchableItems.push('<select');
+    }
+    if (selector.includes('textarea')) {
+      searchableItems.push('<textarea');
+    }
+  }
+  
+  // 属性値を抽出
+  const attrMatches = selector.match(/\[([^=\]]+)=?"?([^"\]]*)"?\]/g);
+  if (attrMatches) {
+    attrMatches.forEach(match => {
+      const attrMatch = match.match(/\[([^=\]]+)=?"?([^"\]]*)"?\]/);
+      if (attrMatch) {
+        const attrName = attrMatch[1];
+        const attrValue = attrMatch[2];
+        if (attrValue) {
+          searchableItems.push(`${attrName}="${attrValue}"`);
+          searchableItems.push(attrValue);
+        } else {
+          searchableItems.push(attrName);
+        }
+      }
+    });
+  }
+  
+  // 重複を除去して最初の6個まで返す
+  return [...new Set(searchableItems)].slice(0, 6);
+};
+
 export const TabContent: React.FC<TabContentProps> = ({
   activeTab,
   issues,
   auth,
 }) => {
   const [selectedIssue, setSelectedIssue] = useState<any>(null);
+
+  // 検索キーワードをクリップボードにコピー
+  const handleCopyKeyword = async (keyword: string, event: React.MouseEvent) => {
+    try {
+      await navigator.clipboard.writeText(keyword);
+      
+      // 視覚的フィードバック
+      const target = event.currentTarget as HTMLElement;
+      target.classList.add('copied');
+      
+      setTimeout(() => {
+        target.classList.remove('copied');
+      }, 600);
+      
+    } catch (err) {
+      console.warn('クリップボードへのコピーに失敗しました:', err);
+      
+      // フォールバック: テキスト選択
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(event.currentTarget);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    }
+  };
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
@@ -465,20 +589,49 @@ export const TabContent: React.FC<TabContentProps> = ({
                     <h5 className="violation-help">{translation.help}</h5>
                     <p className="violation-description">{translation.description}</p>
                     
-                    {translation.fixHint && (
-                      <div className="fix-hint">
-                        <strong>💡 修正のヒント:</strong>
-                        <span>{translation.fixHint}</span>
+                    {/* 該当箇所の詳細表示 */}
+                    {violation.target && violation.target.length > 0 && (
+                      <div className="target-info">
+                        <strong>📍 該当箇所:</strong>
+                        <div className="target-selectors">
+                          {violation.target.map((selector, index) => {
+                            // セレクターから検索しやすい情報を抽出
+                            const searchableInfo = extractSearchableInfo(selector, violation.id);
+                            return (
+                              <div key={index} className="target-selector-item">
+                                <code className="target-selector">
+                                  {selector}
+                                </code>
+                                {searchableInfo && (
+                                  <div className="search-hints">
+                                    <span className="search-hint-label">🔍 検索用キーワード:</span>
+                                    <div className="search-keywords">
+                                      {searchableInfo.map((hint, hintIndex) => (
+                                        <span 
+                                          key={hintIndex} 
+                                          className="search-keyword"
+                                          onClick={(e) => handleCopyKeyword(hint, e)}
+                                          title={`クリックして "${hint}" をコピー`}
+                                        >
+                                          {hint}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
                     
-                    <div className="violation-tags-modern">
-                      {violation.tags.slice(0, 4).map(tag => (
-                        <span key={tag} className="tag-modern">
-                          {translateWcagTag(tag) || tag}
-                        </span>
-                      ))}
-                    </div>
+                    {translation.fixHint && (
+                      <div className="fix-hint">
+                        <strong>修正のヒント:</strong>
+                        <span>{translation.fixHint}</span>
+                      </div>
+                    )}
                     
                     <div className="accessibility-actions">
                       {/* 要素をハイライト表示ボタン */}
