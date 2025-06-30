@@ -495,6 +495,11 @@ function getAllImages($) {
             }
         }
 
+        // 親要素情報を取得
+        const isInHeader = $img.closest('header').length > 0;
+        const isInNav = $img.closest('nav').length > 0;
+        const isInFooter = $img.closest('footer').length > 0;
+        
         images.push({
             index: index + 1,
             src: absoluteSrc,
@@ -505,7 +510,11 @@ function getAllImages($) {
             height: height ? parseInt(height) : null,
             hasAlt: !!alt,
             hasDimensions: !!(width && height),
-            filename: src ? src.split('/').pop() : 'unknown'
+            filename: src ? src.split('/').pop() : 'unknown',
+            isInHeader: isInHeader,
+            isInNav: isInNav,
+            isInFooter: isInFooter,
+            location: isInHeader ? 'header' : isInNav ? 'nav' : isInFooter ? 'footer' : 'content'
         });
     });
 
