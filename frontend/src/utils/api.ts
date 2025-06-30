@@ -35,7 +35,8 @@ async function makeRequest<T>(url: string, options: RequestInit = {}): Promise<T
     if (error instanceof ApiError) {
       throw error;
     }
-    throw new ApiError('Network error or server unavailable');
+    console.error('Network error details:', error);
+    throw new ApiError(`Network error or server unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
