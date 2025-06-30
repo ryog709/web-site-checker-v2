@@ -4,7 +4,6 @@ import type { BasicAuth } from '../types/index.js';
 
 interface UrlFormProps {
   onSingleCheck: (url: string, auth?: BasicAuth) => void;
-  onCrawl: (startUrl: string, urls?: string[], auth?: BasicAuth) => void;
   onCountPages: (startUrl: string, auth?: BasicAuth) => void;
   isLoading: boolean;
 }

@@ -4,16 +4,11 @@ import AxePuppeteer from '@axe-core/puppeteer';
 import * as cheerio from 'cheerio';
 
 /**
- * 単一ページの診断を実行
- * @param {string} url - 診断するURL
- * @param {Object} auth - ベーシック認証情報 (オプション)
- * @returns {Object} 診断結果
+ * Puppeteerブラウザの共通設定を取得
+ * @returns {Object} Puppeteerブラウザ設定
  */
-export async function checkSinglePage(url, auth = null) {
-    // グローバル変数として現在のURLを保存（画像URL解決用）
-    global.currentUrl = url;
-
-    const browser = await puppeteer.launch({
+function getBrowserConfig() {
+    return {
         headless: 'new',
         executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
         args: [
@@ -33,18 +28,38 @@ export async function checkSinglePage(url, auth = null) {
             '--disable-web-security',
             '--disable-features=VizDisplayCompositor'
         ]
-    });
+    };
+}
+
+/**
+ * ベーシック認証の設定
+ * @param {Object} page - Puppeteerページインスタンス
+ * @param {Object} auth - 認証情報
+ */
+async function setupAuth(page, auth) {
+    if (auth && auth.username && auth.password) {
+        await page.authenticate({
+            username: auth.username,
+            password: auth.password
+        });
+    }
+}
+
+/**
+ * 単一ページの診断を実行
+ * @param {string} url - 診断するURL
+ * @param {Object} auth - ベーシック認証情報 (オプション)
+ * @returns {Object} 診断結果
+ */
+export async function checkSinglePage(url, auth = null) {
+    // グローバル変数として現在のURLを保存（画像URL解決用）
+    global.currentUrl = url;
+
+    const browser = await puppeteer.launch(getBrowserConfig());
 
     try {
         const page = await browser.newPage();
-
-        // ベーシック認証の設定
-        if (auth && auth.username && auth.password) {
-            await page.authenticate({
-                username: auth.username,
-                password: auth.password
-            });
-        }
+        await setupAuth(page, auth);
 
         // ページアクセス
         await page.goto(url, {
@@ -890,27 +905,7 @@ function getAllMeta($) {
  * @returns {Object} ページ数とURL一覧
  */
 async function countPages(startUrl, auth = null) {
-    const browser = await puppeteer.launch({
-        headless: 'new',
-        executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding',
-            '--disable-features=TranslateUI',
-            '--disable-ipc-flooding-protection',
-            '--enable-chrome-browser-cloud-management',
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor'
-        ]
-    });
+    const browser = await puppeteer.launch(getBrowserConfig());
 
     try {
         const visited = new Set();
@@ -936,13 +931,7 @@ async function countPages(startUrl, auth = null) {
             try {
                 const page = await browser.newPage();
 
-                // ベーシック認証の設定
-                if (auth && auth.username && auth.password) {
-                    await page.authenticate({
-                        username: auth.username,
-                        password: auth.password
-                    });
-                }
+                await setupAuth(page, auth);
 
                 await page.goto(currentUrl, {
                     waitUntil: 'networkidle2',
@@ -1067,27 +1056,7 @@ async function countPages(startUrl, auth = null) {
  * @returns {Array} 発見されたURL一覧
  */
 async function discoverUrls(startUrl, auth = null) {
-    const browser = await puppeteer.launch({
-        headless: 'new',
-        executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding',
-            '--disable-features=TranslateUI',
-            '--disable-ipc-flooding-protection',
-            '--enable-chrome-browser-cloud-management',
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor'
-        ]
-    });
+    const browser = await puppeteer.launch(getBrowserConfig());
 
     try {
         const visited = new Set();
@@ -1112,13 +1081,7 @@ async function discoverUrls(startUrl, auth = null) {
             try {
                 const page = await browser.newPage();
 
-                // ベーシック認証の設定
-                if (auth && auth.username && auth.password) {
-                    await page.authenticate({
-                        username: auth.username,
-                        password: auth.password
-                    });
-                }
+                await setupAuth(page, auth);
 
                 await page.goto(currentUrl, {
                     waitUntil: 'networkidle2',
