@@ -71,6 +71,8 @@ export interface Issue {
   suggestion?: string;
   linkText?: string;
   linkHtml?: string;
+  fileSize?: number;
+  fileSizeMB?: number;
 }
 
 export interface LighthouseIssue {

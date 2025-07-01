@@ -441,6 +441,17 @@ export const TabContent: React.FC<TabContentProps> = ({
                   <code className="issue-element">{issue.element}</code>
                 )}
                 
+                {/* 画像ファイルサイズ情報を表示 */}
+                {title === '画像' && issue.fileSizeMB && (
+                  <div className="image-filesize-info">
+                    <div className="issue-detail">
+                      <strong>ファイルサイズ:</strong> 
+                      <span className="filesize-mb">{issue.fileSizeMB.toFixed(2)} MB</span>
+                      <span className="filesize-bytes">({issue.fileSize?.toLocaleString()} bytes)</span>
+                    </div>
+                  </div>
+                )}
+                
                 {/* リンク問題の場合は詳細情報を表示 */}
                 {title === 'リンク' && issue.href && (
                   <div className="link-issue-details">

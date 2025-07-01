@@ -349,7 +349,7 @@ async function analyzeDom(page) {
     return {
         headings: analyzeHeadings($),
         headingsStructure: getAllHeadings($), // 新しい項目を追加
-        images: analyzeImages($),
+        images: await analyzeImages($),
         allImages: getAllImages($), // 全ての画像情報を追加
         links: analyzeLinks($),
         meta: analyzeMeta($),
@@ -566,11 +566,11 @@ function getAllImages($) {
  * @param {Object} $ - Cheerio instance
  * @returns {Array} 画像問題一覧
  */
-function analyzeImages($) {
+async function analyzeImages($) {
     const issues = [];
 
     // imgタグの処理
-    $('img').each((index, img) => {
+    for (const img of $('img').toArray()) {
         const $img = $(img);
         const src = $img.attr('src');
         const alt = $img.attr('alt');
@@ -610,7 +610,35 @@ function analyzeImages($) {
                 severity: 'warning'
             });
         }
-    });
+
+        // ファイルサイズチェック（1MB以上）
+        if (absoluteSrc && !absoluteSrc.startsWith('data:')) {
+            try {
+                const response = await fetch(absoluteSrc, { method: 'HEAD' });
+                const contentLength = response.headers.get('content-length');
+                
+                if (contentLength) {
+                    const sizeInBytes = parseInt(contentLength);
+                    const sizeInMB = sizeInBytes / (1024 * 1024);
+                    
+                    if (sizeInMB >= 1) {
+                        issues.push({
+                            type: 'ファイルサイズ過大',
+                            element: 'img',
+                            src: absoluteSrc,
+                            message: `画像ファイルサイズが${sizeInMB.toFixed(2)}MBです。1MB以上の画像は表示速度に影響します`,
+                            severity: 'warning',
+                            fileSize: sizeInBytes,
+                            fileSizeMB: sizeInMB
+                        });
+                    }
+                }
+            } catch (error) {
+                // ネットワークエラーは無視（画像が取得できない場合）
+                console.warn(`画像サイズ取得エラー: ${absoluteSrc}`, error.message);
+            }
+        }
+    }
 
     // SVGタグのアクセシビリティチェック
     $('svg').each((index, svg) => {
