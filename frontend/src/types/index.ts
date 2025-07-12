@@ -47,6 +47,14 @@ export interface ImageInfo {
   }>; // WebP source要素の情報
   loading?: string | null; // loading属性の値
   hasLazyLoading?: boolean; // loading="lazy"が設定済みかどうか
+  position?: {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  } | null; // 画像の位置情報
+  isInFirstView?: boolean; // ファーストビュー内かどうか（ページ上部800px以内）
+  isAboveFold?: boolean; // 現在のビューポート内かどうか
 }
 
 export interface HeadingImage {

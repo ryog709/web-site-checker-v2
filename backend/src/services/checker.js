@@ -350,7 +350,7 @@ async function analyzeDom(page) {
         headings: analyzeHeadings($),
         headingsStructure: getAllHeadings($), // 新しい項目を追加
         images: await analyzeImages($),
-        allImages: getAllImages($), // 全ての画像情報を追加
+        allImages: await getAllImages($, page), // 全ての画像情報を追加（位置情報取得のためページインスタンスを渡す）
         links: analyzeLinks($),
         meta: analyzeMeta($),
         allMeta: getAllMeta($), // 全てのメタ情報を追加
@@ -485,10 +485,42 @@ function analyzeHeadings($) {
 /**
  * 全ての画像情報を取得
  * @param {Object} $ - Cheerio instance
+ * @param {Object} page - Puppeteer page instance (位置情報取得用)
  * @returns {Array} 全画像一覧（詳細情報付き）
  */
-function getAllImages($) {
+async function getAllImages($, page = null) {
     const images = [];
+
+    // Puppeteerページが利用可能な場合、画像の位置情報を取得
+    let imagePositions = [];
+    if (page) {
+        try {
+            imagePositions = await page.evaluate(() => {
+                const imgs = Array.from(document.querySelectorAll('img'));
+                const viewportHeight = window.innerHeight;
+                const FIRST_VIEW_THRESHOLD = 800; // ファーストビューの閾値（800px）
+                
+                return imgs.map((img, index) => {
+                    const rect = img.getBoundingClientRect();
+                    const scrollY = window.scrollY || window.pageYOffset;
+                    const absoluteTop = rect.top + scrollY;
+                    
+                    return {
+                        index: index,
+                        src: img.src,
+                        top: absoluteTop,
+                        left: rect.left,
+                        width: rect.width,
+                        height: rect.height,
+                        isInFirstView: absoluteTop < FIRST_VIEW_THRESHOLD, // ページ上部800px以内かどうか
+                        isAboveFold: rect.top < viewportHeight // 現在のビューポート内かどうか
+                    };
+                });
+            });
+        } catch (error) {
+            console.warn('Failed to get image positions:', error.message);
+        }
+    }
 
     $('img').each((index, img) => {
         const $img = $(img);
@@ -536,6 +568,11 @@ function getAllImages($) {
             });
         }
         
+        // 位置情報を取得（該当する画像があれば）
+        const positionInfo = imagePositions.find(pos => 
+            pos.index === index || pos.src === absoluteSrc
+        );
+
         images.push({
             index: index + 1,
             src: absoluteSrc,
@@ -555,7 +592,16 @@ function getAllImages($) {
             hasWebPAlternative: hasWebPAlternative,
             webpSources: webpSources,
             loading: $img.attr('loading') || null, // loading属性の値を取得
-            hasLazyLoading: $img.attr('loading') === 'lazy' // lazy loading設定済みかどうか
+            hasLazyLoading: $img.attr('loading') === 'lazy', // lazy loading設定済みかどうか
+            // 位置情報を追加
+            position: positionInfo ? {
+                top: positionInfo.top,
+                left: positionInfo.left,
+                width: positionInfo.width,
+                height: positionInfo.height
+            } : null,
+            isInFirstView: positionInfo ? positionInfo.isInFirstView : false, // ファーストビュー内かどうか
+            isAboveFold: positionInfo ? positionInfo.isAboveFold : false // 現在のビューポート内かどうか
         });
     });
 
