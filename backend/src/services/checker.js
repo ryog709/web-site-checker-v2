@@ -553,7 +553,9 @@ function getAllImages($) {
             location: isInHeader ? 'header' : isInNav ? 'nav' : isInFooter ? 'footer' : 'content',
             isInPicture: pictureParent.length > 0,
             hasWebPAlternative: hasWebPAlternative,
-            webpSources: webpSources
+            webpSources: webpSources,
+            loading: $img.attr('loading') || null, // loading属性の値を取得
+            hasLazyLoading: $img.attr('loading') === 'lazy' // lazy loading設定済みかどうか
         });
     });
 

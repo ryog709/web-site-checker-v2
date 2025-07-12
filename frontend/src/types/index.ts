@@ -45,6 +45,8 @@ export interface ImageInfo {
     media?: string;
     sizes?: string;
   }>; // WebP source要素の情報
+  loading?: string | null; // loading属性の値
+  hasLazyLoading?: boolean; // loading="lazy"が設定済みかどうか
 }
 
 export interface HeadingImage {

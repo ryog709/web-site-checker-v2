@@ -89,12 +89,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
           recommendations.push('未使用CSSの削除');
           recommendations.push('JavaScript分割の実装');
         } else if (score < 90) {
-          // header要素内の画像とSVG画像は遅延読み込み対象から除外
+          // header要素内の画像、SVG画像、既にlazy loading設定済みの画像を遅延読み込み対象から除外
           const lazyLoadCandidates = (issues?.allImages || []).filter((img: any) => 
             !img.isInHeader && 
             !img.isInNav && 
             !img.filename?.toLowerCase().includes('.svg') &&
-            !img.src?.toLowerCase().includes('.svg')
+            !img.src?.toLowerCase().includes('.svg') &&
+            !img.hasLazyLoading // 既にloading="lazy"が設定されている画像は除外
           );
           
           if (lazyLoadCandidates.length > 0) {
@@ -102,8 +103,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
             details.push({
               id: 'lazy-loading',
               title: '画像の遅延読み込み実装',
-              description: '以下の画像に遅延読み込み（lazy loading）を実装することで、初期ページ読み込み速度を向上できます。（ヘッダー・ナビゲーション内の画像とSVG画像は除外）',
-              items: lazyLoadCandidates.slice(0, 8).map((img: any, index: number) => ({
+              description: '以下の画像に遅延読み込み（lazy loading）を実装することで、初期ページ読み込み速度を向上できます。（ヘッダー・ナビゲーション内の画像、SVG画像、既にlazy loading設定済みの画像は除外）',
+              items: lazyLoadCandidates.slice(0, 8).map((img: any) => ({
                 filename: img.filename,
                 src: img.src,
                 element: `<img src="${img.src}" loading="lazy" alt="${img.alt}">`,
