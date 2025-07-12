@@ -60,13 +60,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
           }
         }
         
-        // WebP形式への変換提案（SVGファイルは除外）
+        // WebP形式への変換提案（SVGファイルと既にWebP代替画像があるものは除外）
         if (issues?.allImages) {
           const nonWebPImages = issues.allImages.filter((img: any) => 
             img.filename && 
             !img.filename.toLowerCase().includes('.webp') &&
             !img.filename.toLowerCase().includes('.svg') &&
-            !img.src.toLowerCase().includes('.svg')
+            !img.src.toLowerCase().includes('.svg') &&
+            !img.hasWebPAlternative // picture要素でWebP代替画像がある場合は除外
           );
           if (nonWebPImages.length > 3) {
             recommendations.push(`${nonWebPImages.length}個の画像をWebP形式に変換を検討`);
@@ -78,7 +79,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
                 filename: img.filename,
                 src: img.src,
                 details: `現在のサイズ: ${img.width}×${img.height}px`,
-                location: `img要素 (${img.index + 1}番目)`
+                location: `img要素 (${img.index + 1}番目)${img.isInPicture ? ' - picture要素内' : ''}${img.hasWebPAlternative ? ' - WebP代替画像あり' : ''}`
               }))
             });
           }

@@ -515,6 +515,27 @@ function getAllImages($) {
         const isInNav = $img.closest('nav').length > 0;
         const isInFooter = $img.closest('footer').length > 0;
         
+        // picture要素内かどうかと、WebP代替画像の有無をチェック
+        const pictureParent = $img.closest('picture');
+        let hasWebPAlternative = false;
+        let webpSources = [];
+        
+        if (pictureParent.length > 0) {
+            // picture要素内のsource要素でWebPを探す
+            pictureParent.find('source[type="image/webp"]').each((i, source) => {
+                const $source = $(source);
+                const srcset = $source.attr('srcset');
+                if (srcset) {
+                    hasWebPAlternative = true;
+                    webpSources.push({
+                        srcset: srcset,
+                        media: $source.attr('media') || '',
+                        sizes: $source.attr('sizes') || ''
+                    });
+                }
+            });
+        }
+        
         images.push({
             index: index + 1,
             src: absoluteSrc,
@@ -529,7 +550,10 @@ function getAllImages($) {
             isInHeader: isInHeader,
             isInNav: isInNav,
             isInFooter: isInFooter,
-            location: isInHeader ? 'header' : isInNav ? 'nav' : isInFooter ? 'footer' : 'content'
+            location: isInHeader ? 'header' : isInNav ? 'nav' : isInFooter ? 'footer' : 'content',
+            isInPicture: pictureParent.length > 0,
+            hasWebPAlternative: hasWebPAlternative,
+            webpSources: webpSources
         });
     });
 

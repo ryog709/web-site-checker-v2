@@ -38,6 +38,13 @@ export interface ImageInfo {
   filename: string;
   type?: 'svg' | 'img'; // 画像の種類（通常の画像 or インラインSVG）
   role?: string; // SVGのrole属性（img, presentation等）
+  isInPicture?: boolean; // picture要素内かどうか
+  hasWebPAlternative?: boolean; // WebP代替画像の有無
+  webpSources?: Array<{
+    srcset: string;
+    media?: string;
+    sizes?: string;
+  }>; // WebP source要素の情報
 }
 
 export interface HeadingImage {
