@@ -38,15 +38,12 @@ export interface ImageInfo {
   filename: string;
   type?: 'svg' | 'img'; // 画像の種類（通常の画像 or インラインSVG）
   role?: string; // SVGのrole属性（img, presentation等）
-  isInPicture?: boolean; // picture要素内かどうか
-  hasWebPAlternative?: boolean; // WebP代替画像の有無
-  webpSources?: Array<{
-    srcset: string;
-    media?: string;
-    sizes?: string;
-  }>; // WebP source要素の情報
-  loading?: string | null; // loading属性の値
-  hasLazyLoading?: boolean; // loading="lazy"が設定済みかどうか
+  
+  // ページ内での位置と表示状況
+  isInHeader?: boolean;
+  isInNav?: boolean;
+  isInFooter?: boolean;
+  location?: string; // header | nav | footer | content
   position?: {
     top: number;
     left: number;
@@ -55,6 +52,19 @@ export interface ImageInfo {
   } | null; // 画像の位置情報
   isInFirstView?: boolean; // ファーストビュー内かどうか（ページ上部800px以内）
   isAboveFold?: boolean; // 現在のビューポート内かどうか
+  
+  // WebP対応状況
+  isInPicture?: boolean; // picture要素内かどうか
+  hasWebPAlternative?: boolean; // WebP代替画像の有無
+  webpSources?: Array<{
+    srcset: string;
+    media?: string;
+    sizes?: string;
+  }>; // WebP source要素の情報
+  
+  // 遅延読み込み対応状況
+  loading?: string | null; // loading属性の値
+  hasLazyLoading?: boolean; // loading="lazy"が設定済みかどうか
 }
 
 export interface HeadingImage {

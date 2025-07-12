@@ -373,7 +373,7 @@ function getAllHeadings($) {
         const images = [];
 
         // 見出し内の画像情報を詳細取得
-        $heading.find('img').each((i, img) => {
+        $heading.find('img').each((_, img) => {
             const $img = $(img);
             const alt = $img.attr('alt') || '';
             const title = $img.attr('title') || '';
@@ -483,10 +483,10 @@ function analyzeHeadings($) {
 }
 
 /**
- * 全ての画像情報を取得
+ * 全ての画像情報を取得（位置情報、WebP代替画像、遅延読み込み状況を含む）
  * @param {Object} $ - Cheerio instance
- * @param {Object} page - Puppeteer page instance (位置情報取得用)
- * @returns {Array} 全画像一覧（詳細情報付き）
+ * @param {Object} page - Puppeteer page instance (位置情報取得用、オプション)
+ * @returns {Promise<Array>} 全画像一覧（詳細情報付き）
  */
 async function getAllImages($, page = null) {
     const images = [];
@@ -550,11 +550,11 @@ async function getAllImages($, page = null) {
         // picture要素内かどうかと、WebP代替画像の有無をチェック
         const pictureParent = $img.closest('picture');
         let hasWebPAlternative = false;
-        let webpSources = [];
+        const webpSources = [];
         
         if (pictureParent.length > 0) {
             // picture要素内のsource要素でWebPを探す
-            pictureParent.find('source[type="image/webp"]').each((i, source) => {
+            pictureParent.find('source[type="image/webp"]').each((_, source) => {
                 const $source = $(source);
                 const srcset = $source.attr('srcset');
                 if (srcset) {
@@ -606,7 +606,7 @@ async function getAllImages($, page = null) {
     });
 
     // SVGタグも画像として処理（アクセシビリティチェック対象）
-    $('svg').each((index, svg) => {
+    $('svg').each((_, svg) => {
         const $svg = $(svg);
         const role = $svg.attr('role');
         const ariaLabel = $svg.attr('aria-label');
@@ -713,7 +713,7 @@ async function analyzeImages($) {
     }
 
     // SVGタグのアクセシビリティチェック
-    $('svg').each((index, svg) => {
+    $('svg').each((_, svg) => {
         const $svg = $(svg);
         const role = $svg.attr('role');
         const ariaLabel = $svg.attr('aria-label');
@@ -757,7 +757,7 @@ async function analyzeImages($) {
 function analyzeLinks($) {
     const issues = [];
 
-    $('a').each((index, link) => {
+    $('a').each((_, link) => {
         const $link = $(link);
         const href = $link.attr('href');
         const text = $link.text().trim();
