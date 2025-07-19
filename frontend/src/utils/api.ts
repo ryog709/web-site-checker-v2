@@ -1,7 +1,7 @@
 import type { CheckResult, CrawlResult, BasicAuth } from '../types/index.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || (
-  import.meta.env.PROD ? '/api' : 'http://localhost:4000/api'
+  import.meta.env.PROD ? '' : 'http://localhost:4000'
 );
 
 export class ApiError extends Error {
@@ -56,7 +56,7 @@ async function makeRequest<T>(url: string, options: RequestInit = {}): Promise<T
 }
 
 export async function checkSinglePage(url: string, auth?: BasicAuth): Promise<CheckResult> {
-  return makeRequest<CheckResult>('/check', {
+  return makeRequest<CheckResult>('/api/check', {
     method: 'POST',
     body: JSON.stringify({ url, auth }),
   });
@@ -68,14 +68,14 @@ export interface PageCountResult {
 }
 
 export async function countPages(startUrl: string, auth?: BasicAuth): Promise<PageCountResult> {
-  return makeRequest<PageCountResult>('/count-pages', {
+  return makeRequest<PageCountResult>('/api/count-pages', {
     method: 'POST',
     body: JSON.stringify({ url: startUrl, auth }),
   });
 }
 
 export async function crawlSite(startUrl: string, urls?: string[], auth?: BasicAuth): Promise<CrawlResult> {
-  return makeRequest<CrawlResult>('/crawl', {
+  return makeRequest<CrawlResult>('/api/crawl', {
     method: 'POST',
     body: JSON.stringify({ startUrl, urls, auth }),
   });
