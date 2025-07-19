@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { TabType, CheckResult, Issue, Heading, ImageInfo, BasicAuth, MetaInfo, ConsoleError } from '../types/index.js';
-import { ExternalLink, AlertTriangle, AlertCircle, Info, Image as ImageIcon, FileText, Eye, Terminal, Clock, LinkIcon } from 'lucide-react';
+import { ExternalLink, AlertTriangle, AlertCircle, Info, Image as ImageIcon, FileText, Eye, Terminal, Clock, LinkIcon, Target } from 'lucide-react';
 import { Modal } from './Modal.js';
 import { getProxiedImageUrl, isValidImageUrl } from '../utils/imageUtils.js';
 import { getAxeTranslation, translateImpact, translateWcagTag } from '../constants/axeTranslations.js';
@@ -1214,7 +1214,8 @@ export const TabContent: React.FC<TabContentProps> = ({
                   <button
                     className="highlight-button modal-highlight"
                     onClick={() => {
-                      flashHighlight(selectedIssue.target, selectedIssue.impact);
+                      // flashHighlight(selectedIssue.target, selectedIssue.impact);
+                      console.log('Highlight element:', selectedIssue.target);
                       // モーダルを閉じて要素を見やすくする
                       setSelectedIssue(null);
                     }}

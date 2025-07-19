@@ -7,5 +7,8 @@ export default defineConfig({
   server: {
     port: 8080,
     host: true
+  },
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production')
   }
 })
