@@ -15,8 +15,13 @@ export class ApiError extends Error {
 }
 
 async function makeRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
+  const fullUrl = `${API_BASE_URL}${url}`;
+  console.log('Making API request to:', fullUrl);
+  console.log('API_BASE_URL:', API_BASE_URL);
+  console.log('Environment:', import.meta.env.PROD ? 'production' : 'development');
+  
   try {
-    const response = await fetch(`${API_BASE_URL}${url}`, {
+    const response = await fetch(fullUrl, {
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
@@ -24,20 +29,28 @@ async function makeRequest<T>(url: string, options: RequestInit = {}): Promise<T
       ...options,
     });
 
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      console.error('API Error Response:', errorData);
       throw new ApiError(
         errorData.message || errorData.error || `HTTP ${response.status}`,
         response.status
       );
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log('API Response success:', data);
+    return data;
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
     }
     console.error('Network error details:', error);
+    console.error('Error type:', typeof error);
+    console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
     throw new ApiError(`Network error or server unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
