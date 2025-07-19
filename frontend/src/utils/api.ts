@@ -1,6 +1,8 @@
 import type { CheckResult, CrawlResult, BasicAuth } from '../types/index.js';
 
-const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api`;
+const API_BASE_URL = import.meta.env.VITE_API_URL || (
+  import.meta.env.PROD ? '/api' : 'http://localhost:4000/api'
+);
 
 export class ApiError extends Error {
   status?: number;
@@ -55,7 +57,7 @@ export interface PageCountResult {
 export async function countPages(startUrl: string, auth?: BasicAuth): Promise<PageCountResult> {
   return makeRequest<PageCountResult>('/count-pages', {
     method: 'POST',
-    body: JSON.stringify({ startUrl, auth }),
+    body: JSON.stringify({ url: startUrl, auth }),
   });
 }
 
