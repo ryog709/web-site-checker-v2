@@ -618,7 +618,7 @@ export const TabContent: React.FC<TabContentProps> = ({
                     
 
                     {/* デバッグ情報 */}
-                    {process.env.NODE_ENV === 'development' && (
+                    {import.meta.env.DEV && (
                       <div style={{ 
                         marginTop: '10px', 
                         padding: '8px', 
