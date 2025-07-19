@@ -1,8 +1,7 @@
 import type { CheckResult, CrawlResult, BasicAuth } from '../types/index.js';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || (
-  import.meta.env.PROD ? '' : 'http://localhost:4000'
-);
+// Force relative API calls to avoid CORS issues
+const API_BASE_URL = '';
 
 export class ApiError extends Error {
   status?: number;
