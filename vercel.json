@@ -2,15 +2,10 @@
   "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/dist",
   "installCommand": "npm install --prefix frontend && npm install --prefix backend",
-  "functions": {
-    "backend/src/server.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/backend/src/server.js"
+      "destination": "/api/$1"
     },
     {
       "source": "/(.*)",
