@@ -1,7 +1,7 @@
 import type { CheckResult, CrawlResult, BasicAuth } from '../types/index.js';
 
-// Force relative API calls to avoid CORS issues
-const API_BASE_URL = '';
+// Local development API URL
+const API_BASE_URL = 'http://localhost:4000';
 
 export class ApiError extends Error {
   status?: number;
