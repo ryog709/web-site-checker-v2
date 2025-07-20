@@ -148,8 +148,10 @@ web-site-checker-v2/
 │   │   ├── utils/             # ユーティリティ
 │   │   │   ├── api.ts         # API通信
 │   │   │   └── imageUtils.ts  # 画像処理
+│   │   ├── hooks/             # カスタムフック
 │   │   ├── constants/         # 定数定義
-│   │   │   └── axeTranslations.js # アクセシビリティ翻訳
+│   │   │   ├── axeTranslations.js # アクセシビリティ翻訳
+│   │   │   └── axeTranslations.d.ts # 型定義
 │   │   ├── assets/            # 静的アセット
 │   │   │   └── react.svg
 │   │   ├── App.tsx            # メインアプリ
