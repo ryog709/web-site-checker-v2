@@ -3,13 +3,15 @@ import { Search, Globe, Lock } from 'lucide-react';
 import type { BasicAuth } from '../types/index.js';
 
 interface UrlFormProps {
-  onSingleCheck: (url: string, auth?: BasicAuth) => void;
-  onCountPages: (startUrl: string, auth?: BasicAuth) => void;
+  onSingleCheck: (url: string, auth?: BasicAuth) => Promise<void>;
+  onCrawl: (startUrl: string, urls?: string[], auth?: BasicAuth) => Promise<void>;
+  onCountPages: (startUrl: string, auth?: BasicAuth) => Promise<void>;
   isLoading: boolean;
 }
 
 export const UrlForm: React.FC<UrlFormProps> = ({
   onSingleCheck,
+  onCrawl: _onCrawl,
   onCountPages,
   isLoading,
 }) => {
