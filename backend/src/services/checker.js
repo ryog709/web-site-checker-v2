@@ -2,15 +2,62 @@ import puppeteer from 'puppeteer';
 import lighthouse from 'lighthouse';
 import AxePuppeteer from '@axe-core/puppeteer';
 import * as cheerio from 'cheerio';
+import os from 'os';
+import fs from 'fs';
+
+/**
+ * OS別のChrome実行ファイルパスを取得
+ * @returns {string|null} Chrome実行ファイルパス
+ */
+function getChromeExecutablePath() {
+    const platform = os.platform();
+    
+    const chromePaths = {
+        win32: [
+            'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+            'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+            'C:\\Users\\' + os.userInfo().username + '\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe'
+        ],
+        darwin: [
+            '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+        ],
+        linux: [
+            '/usr/bin/google-chrome',
+            '/usr/bin/google-chrome-stable',
+            '/usr/bin/chromium-browser',
+            '/usr/bin/chromium',
+            '/opt/google/chrome/chrome',
+            '/snap/bin/chromium'
+        ]
+    };
+    
+    const pathsToTry = chromePaths[platform] || [];
+    
+    // 各パスを順番にチェック
+    for (const path of pathsToTry) {
+        try {
+            if (fs.existsSync(path)) {
+                return path;
+            }
+        } catch (error) {
+            // パスチェックエラーは無視して次へ
+            continue;
+        }
+    }
+    
+    // 見つからない場合はnullを返す（Puppeteerのデフォルト設定を使用）
+    return null;
+}
 
 /**
  * Puppeteerブラウザの共通設定を取得
  * @returns {Object} Puppeteerブラウザ設定
  */
 function getBrowserConfig() {
-    return {
+    const executablePath = getChromeExecutablePath();
+    
+    const config = {
         headless: 'new',
-        executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -29,6 +76,49 @@ function getBrowserConfig() {
             '--disable-features=VizDisplayCompositor'
         ]
     };
+    
+    // Chrome実行ファイルが見つかった場合のみパスを指定
+    if (executablePath) {
+        config.executablePath = executablePath;
+    }
+    
+    return config;
+}
+
+/**
+ * ブラウザ起動のリトライ機能付き関数
+ * @returns {Object} Puppeteerブラウザインスタンス
+ */
+async function launchBrowserWithRetry(maxRetries = 3) {
+    let lastError;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            const browser = await puppeteer.launch(getBrowserConfig());
+            return browser;
+        } catch (error) {
+            lastError = error;
+            if (attempt === maxRetries) {
+                console.warn(`Browser launch failed after ${maxRetries} attempts:`, error.message);
+            }
+            
+            if (attempt === maxRetries) {
+                // 最後の試行では、Puppeteer bundled Chromiumを試す
+                try {
+                    const fallbackConfig = getBrowserConfig();
+                    delete fallbackConfig.executablePath; // executablePathを削除してbundled Chromiumを使用
+                    const browser = await puppeteer.launch(fallbackConfig);
+                    return browser;
+                } catch (fallbackError) {
+                    console.error('Browser launch failed with fallback:', fallbackError.message);
+                    throw new Error(`Browser launch failed after ${maxRetries} attempts. Original error: ${lastError.message}. Fallback error: ${fallbackError.message}`);
+                }
+            }
+            
+            // 次の試行前に少し待つ
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+    }
 }
 
 /**
@@ -55,7 +145,7 @@ export async function checkSinglePage(url, auth = null) {
     // グローバル変数として現在のURLを保存（画像URL解決用）
     global.currentUrl = url;
 
-    const browser = await puppeteer.launch(getBrowserConfig());
+    const browser = await launchBrowserWithRetry();
 
     try {
         const page = await browser.newPage();
@@ -1005,7 +1095,7 @@ function getAllMeta($) {
  * @returns {Object} ページ数とURL一覧
  */
 async function countPages(startUrl, auth = null) {
-    const browser = await puppeteer.launch(getBrowserConfig());
+    const browser = await launchBrowserWithRetry();
 
     try {
         const visited = new Set();
@@ -1156,7 +1246,7 @@ async function countPages(startUrl, auth = null) {
  * @returns {Array} 発見されたURL一覧
  */
 async function discoverUrls(startUrl, auth = null) {
-    const browser = await puppeteer.launch(getBrowserConfig());
+    const browser = await launchBrowserWithRetry();
 
     try {
         const visited = new Set();
