@@ -15,17 +15,10 @@ app.use(helmet());
 // CORS設定
 const getAllowedOrigins = () => {
     if (process.env.NODE_ENV === 'production') {
-        // 本番環境では Vercel フロントエンドのドメインを許可
-        return [
-            // 実際のフロントエンドドメイン
-            'https://web-site-checker-v2-frontend-pri1ga917-ryog709s-projects.vercel.app',
-            // その他の可能性があるVercelドメイン
-            'https://web-site-checker-v2.vercel.app',
-            'https://web-site-checker-v2-git-main-ryog709s-projects.vercel.app',
-            'https://web-site-checker-v2-ryog709s-projects.vercel.app',
-            // Vercelプレビュードメインパターン
-            /^https:\/\/web-site-checker-v2.*\.vercel\.app$/
-        ];
+        // 本番環境では VPSサーバーのフロントエンドドメインを許可
+        return process.env.FRONTEND_URL 
+            ? [process.env.FRONTEND_URL]
+            : ['http://localhost:8080']; // 環境変数未設定時のフォールバック
     } else {
         // 開発環境では localhost を許可
         return [
