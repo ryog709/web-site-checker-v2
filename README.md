@@ -12,6 +12,32 @@
 - 🐛 コンソールエラー収集
 - 📊 Puppeteer詳細DOM解析
 
+## 📋 システム要件
+
+このツールを実行するために必要な環境：
+
+### 必須要件
+- **Node.js**: 18.0.0 以上
+- **npm**: Node.js に付属のバージョン
+- **Google Chrome**: Puppeteer でのブラウザ自動化に必要
+
+### 対応OS
+- **macOS**: 10.15 (Catalina) 以上
+- **Windows**: 10 以上
+- **Linux**: Ubuntu 18.04 以上、または同等のディストリビューション
+
+### バージョン確認
+```bash
+# Node.js バージョン確認
+node --version
+
+# npm バージョン確認
+npm --version
+
+# Google Chrome インストール確認 (macOS)
+ls "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+```
+
 ## 🚀 クイックスタート
 
 ### 1. インストール
@@ -230,15 +256,20 @@ cd frontend && npm run format
 ### Backend 主要パッケージ
 
 - **Express**: Web サーバーフレームワーク
-- **Puppeteer**: ブラウザ自動化
-- **Lighthouse**: サイト品質測定
-- **axe-core**: アクセシビリティ検証
+- **Puppeteer**: 23.9.0+ ブラウザ自動化
+- **Lighthouse**: 11.4.0+ サイト品質測定
+- **axe-core**: 4.8.3+ アクセシビリティ検証
 - **Cheerio**: HTML パース・操作
 
 ### Frontend 主要パッケージ
 
-- **React 19**: UI ライブラリ
-- **TypeScript**: 型安全性
-- **Vite**: 高速ビルドツール
+- **React**: 19.1.0+ UI ライブラリ
+- **TypeScript**: 5.8.3+ 型安全性
+- **Vite**: 6.3.5+ 高速ビルドツール
 - **Lucide React**: アイコンライブラリ
 - **Recharts**: グラフ・チャート表示
+
+### 重要な更新情報
+
+⚠️ **Puppeteer v22.8.2未満はサポート終了**: 最新版の v23.9.0 を使用しています
+⚠️ **ESLint v8はサポート終了**: v9.25.0 に更新済み
