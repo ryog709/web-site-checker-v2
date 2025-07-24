@@ -15,7 +15,7 @@ interface ImageRendererProps {
 /**
  * 画像の読み込みとフォールバック処理を統一するコンポーネント
  */
-export const ImageRenderer: React.FC<ImageRendererProps> = ({
+export const ImageRenderer: React.FC<ImageRendererProps> = React.memo(({
     src,
     alt,
     className = '',
@@ -70,12 +70,12 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
             </div>
         </>
     );
-};
+});
 
 /**
  * 見出し内画像用の水平レイアウト版
  */
-export const ImageRendererHorizontal: React.FC<ImageRendererProps> = (props) => {
+export const ImageRendererHorizontal: React.FC<ImageRendererProps> = React.memo((props) => {
     return (
         <div className="image-container-horizontal">
             <ImageRenderer
@@ -85,12 +85,12 @@ export const ImageRendererHorizontal: React.FC<ImageRendererProps> = (props) => 
             />
         </div>
     );
-};
+});
 
 /**
  * 全画像表示用のフルサイズ版
  */
-export const ImageRendererFull: React.FC<ImageRendererProps> = (props) => {
+export const ImageRendererFull: React.FC<ImageRendererProps> = React.memo((props) => {
     return (
         <ImageRenderer
             {...props}
@@ -98,12 +98,12 @@ export const ImageRendererFull: React.FC<ImageRendererProps> = (props) => {
             size="large"
         />
     );
-};
+});
 
 /**
  * 問題表示用の画像プレビュー版
  */
-export const ImageRendererIssue: React.FC<ImageRendererProps> = (props) => {
+export const ImageRendererIssue: React.FC<ImageRendererProps> = React.memo((props) => {
     return (
         <ImageRenderer
             {...props}
@@ -112,4 +112,4 @@ export const ImageRendererIssue: React.FC<ImageRendererProps> = (props) => {
             fallbackText="画像を読み込めません"
         />
     );
-};
+});

@@ -8,7 +8,7 @@ interface SummaryCardsProps {
   totalPages: number;
 }
 
-export const SummaryCards: React.FC<SummaryCardsProps> = ({
+export const SummaryCards: React.FC<SummaryCardsProps> = React.memo(({
   issues,
   isCrawlResult,
   totalPages,
@@ -96,4 +96,4 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
       })}
     </div>
   );
-};
+});

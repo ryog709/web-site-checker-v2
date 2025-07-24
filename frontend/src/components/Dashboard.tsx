@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import type { CheckResult, CrawlResult, TabType, RecommendationDetail } from '../types/index.js';
 import { ScoreRing } from './ScoreRing.js';
 import { SummaryCards } from './SummaryCards.js';
@@ -38,8 +38,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
     seo: data?.scores?.seo ?? 0
   };
 
-  // 改善提案を生成
-  const getRecommendations = (category: string, score: number, issues: any) => {
+  // 改善提案を生成（メモ化で重い計算を最適化）
+  const getRecommendations = useCallback((category: string, score: number, issues: any) => {
     const recommendations: string[] = [];
     const details: RecommendationDetail[] = [];
 
@@ -254,7 +254,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
     }
 
     return { recommendations, details };
-  };
+  }, [data.url]);
+
+  // スコアごとの推奨データをメモ化
+  const performanceData = useMemo(() => 
+    getRecommendations('performance', scores.performance, data.issues), 
+    [getRecommendations, scores.performance, data.issues]
+  );
+  
+  const accessibilityData = useMemo(() => 
+    getRecommendations('accessibility', scores.accessibility, data.issues), 
+    [getRecommendations, scores.accessibility, data.issues]
+  );
+  
+  const bestPracticesData = useMemo(() => 
+    getRecommendations('bestpractices', scores.bestpractices, data.issues), 
+    [getRecommendations, scores.bestpractices, data.issues]
+  );
+  
+  const seoData = useMemo(() => 
+    getRecommendations('seo', scores.seo, data.issues), 
+    [getRecommendations, scores.seo, data.issues]
+  );
 
   if (!data || data.error) {
     return (
@@ -498,54 +519,34 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
               <div className="scores-section">
                 <h3>Lighthouseスコア</h3>
                 <div className="score-rings">
-                  {(() => {
-                    const perfData = getRecommendations('performance', scores.performance, data.issues);
-                    return (
-                      <ScoreRing
-                        score={scores.performance}
-                        label="Performance"
-                        color="--score-performance"
-                        recommendations={perfData.recommendations}
-                        recommendationDetails={perfData.details}
-                      />
-                    );
-                  })()}
-                  {(() => {
-                    const a11yData = getRecommendations('accessibility', scores.accessibility, data.issues);
-                    return (
-                      <ScoreRing
-                        score={scores.accessibility}
-                        label="Accessibility"
-                        color="--score-accessibility"
-                        recommendations={a11yData.recommendations}
-                        recommendationDetails={a11yData.details}
-                      />
-                    );
-                  })()}
-                  {(() => {
-                    const bpData = getRecommendations('bestpractices', scores.bestpractices, data.issues);
-                    return (
-                      <ScoreRing
-                        score={scores.bestpractices}
-                        label="Best Practices"
-                        color="--score-best-practices"
-                        recommendations={bpData.recommendations}
-                        recommendationDetails={bpData.details}
-                      />
-                    );
-                  })()}
-                  {(() => {
-                    const seoData = getRecommendations('seo', scores.seo, data.issues);
-                    return (
-                      <ScoreRing
-                        score={scores.seo}
-                        label="SEO"
-                        color="--score-seo"
-                        recommendations={seoData.recommendations}
-                        recommendationDetails={seoData.details}
-                      />
-                    );
-                  })()}
+                  <ScoreRing
+                    score={scores.performance}
+                    label="Performance"
+                    color="--score-performance"
+                    recommendations={performanceData.recommendations}
+                    recommendationDetails={performanceData.details}
+                  />
+                  <ScoreRing
+                    score={scores.accessibility}
+                    label="Accessibility"
+                    color="--score-accessibility"
+                    recommendations={accessibilityData.recommendations}
+                    recommendationDetails={accessibilityData.details}
+                  />
+                  <ScoreRing
+                    score={scores.bestpractices}
+                    label="Best Practices"
+                    color="--score-best-practices"
+                    recommendations={bestPracticesData.recommendations}
+                    recommendationDetails={bestPracticesData.details}
+                  />
+                  <ScoreRing
+                    score={scores.seo}
+                    label="SEO"
+                    color="--score-seo"
+                    recommendations={seoData.recommendations}
+                    recommendationDetails={seoData.details}
+                  />
                 </div>
               </div>
 

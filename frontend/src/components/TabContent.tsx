@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import type { TabType, CheckResult, Issue, Heading, ImageInfo, BasicAuth, MetaInfo, ConsoleError } from '../types/index.js';
 import { ExternalLink, AlertTriangle, AlertCircle, Info, Image as ImageIcon, FileText, Eye, Terminal, Clock, LinkIcon, Target } from 'lucide-react';
 import { Modal } from './Modal.js';
@@ -110,15 +110,15 @@ const extractSearchableInfo = (selector: string, ruleId: string): string[] => {
   return [...new Set(searchableItems)].slice(0, 6);
 };
 
-export const TabContent: React.FC<TabContentProps> = ({
+export const TabContent: React.FC<TabContentProps> = React.memo(({
   activeTab,
   issues,
   auth,
 }) => {
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
-  // 検索キーワードをクリップボードにコピー
-  const handleCopyKeyword = async (keyword: string, event: React.MouseEvent) => {
+  // 検索キーワードをクリップボードにコピー（メモ化で最適化）
+  const handleCopyKeyword = useCallback(async (keyword: string, event: React.MouseEvent) => {
     try {
       await navigator.clipboard.writeText(keyword);
       
@@ -140,7 +140,7 @@ export const TabContent: React.FC<TabContentProps> = ({
       selection?.removeAllRanges();
       selection?.addRange(range);
     }
-  };
+  }, []);
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
@@ -1236,4 +1236,4 @@ export const TabContent: React.FC<TabContentProps> = ({
       {renderIssueModal()}
     </div>
   );
-};
+});
