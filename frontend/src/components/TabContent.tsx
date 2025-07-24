@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import type { TabType, CheckResult, Issue, Heading, ImageInfo, BasicAuth, MetaInfo, ConsoleError } from '../types/index.js';
 import { ExternalLink, AlertTriangle, AlertCircle, Info, Image as ImageIcon, FileText, Eye, Terminal, Clock, LinkIcon, Target } from 'lucide-react';
 import { Modal } from './Modal.js';
-import { getProxiedImageUrl, isValidImageUrl } from '../utils/imageUtils.js';
 import { getAxeTranslation, translateImpact, translateWcagTag } from '../constants/axeTranslations.js';
 import { ImageRendererHorizontal, ImageRendererFull, ImageRendererIssue } from './ImageRenderer.js';
 
@@ -116,7 +115,7 @@ export const TabContent: React.FC<TabContentProps> = ({
   issues,
   auth,
 }) => {
-  const [selectedIssue, setSelectedIssue] = useState<any>(null);
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
   // 検索キーワードをクリップボードにコピー
   const handleCopyKeyword = async (keyword: string, event: React.MouseEvent) => {
