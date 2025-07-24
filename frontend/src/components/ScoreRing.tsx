@@ -11,7 +11,7 @@ interface ScoreRingProps {
   recommendationDetails?: RecommendationDetail[];
 }
 
-export const ScoreRing: React.FC<ScoreRingProps> = ({
+export const ScoreRing: React.FC<ScoreRingProps> = React.memo(({
   score,
   label,
   size = 120,
@@ -183,4 +183,4 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({
       )}
     </div>
   );
-};
+});

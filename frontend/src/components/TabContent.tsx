@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import type { TabType, CheckResult, Issue, Heading, ImageInfo, BasicAuth, MetaInfo, ConsoleError } from '../types/index.js';
 import { ExternalLink, AlertTriangle, AlertCircle, Info, Image as ImageIcon, FileText, Eye, Terminal, Clock, LinkIcon, Target } from 'lucide-react';
 import { Modal } from './Modal.js';
-import { getProxiedImageUrl, isValidImageUrl } from '../utils/imageUtils.js';
 import { getAxeTranslation, translateImpact, translateWcagTag } from '../constants/axeTranslations.js';
+import { ImageRendererHorizontal, ImageRendererFull, ImageRendererIssue } from './ImageRenderer.js';
 
 interface TabContentProps {
   activeTab: TabType;
@@ -110,15 +110,15 @@ const extractSearchableInfo = (selector: string, ruleId: string): string[] => {
   return [...new Set(searchableItems)].slice(0, 6);
 };
 
-export const TabContent: React.FC<TabContentProps> = ({
+export const TabContent: React.FC<TabContentProps> = React.memo(({
   activeTab,
   issues,
   auth,
 }) => {
-  const [selectedIssue, setSelectedIssue] = useState<any>(null);
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
-  // 検索キーワードをクリップボードにコピー
-  const handleCopyKeyword = async (keyword: string, event: React.MouseEvent) => {
+  // 検索キーワードをクリップボードにコピー（メモ化で最適化）
+  const handleCopyKeyword = useCallback(async (keyword: string, event: React.MouseEvent) => {
     try {
       await navigator.clipboard.writeText(keyword);
       
@@ -140,7 +140,7 @@ export const TabContent: React.FC<TabContentProps> = ({
       selection?.removeAllRanges();
       selection?.addRange(range);
     }
-  };
+  }, []);
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
@@ -205,28 +205,12 @@ export const TabContent: React.FC<TabContentProps> = ({
                     {heading.hasImage && heading.images.length > 0 && (
                       <div className="heading-images-horizontal">
                         {heading.images.map((img, imgIndex) => (
-                          <div key={imgIndex} className="image-container-horizontal">
-                            {isValidImageUrl(img.src) ? (
-                              <img 
-                                src={getProxiedImageUrl(img.src, auth)} 
-                                alt={img.alt || '画像'}
-                                className="preview-image-horizontal"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                  if (e.currentTarget.nextElementSibling) {
-                                    (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
-                                  }
-                                }}
-                              />
-                            ) : (
-                              <div className="image-fallback-horizontal">
-                                <ImageIcon size={24} />
-                              </div>
-                            )}
-                            <div className="image-fallback-horizontal" style={{ display: 'none' }}>
-                              <ImageIcon size={24} />
-                            </div>
-                          </div>
+                          <ImageRendererHorizontal
+                            key={imgIndex}
+                            src={img.src}
+                            alt={img.alt || '画像'}
+                            auth={auth}
+                          />
                         ))}
                       </div>
                     )}
@@ -279,28 +263,13 @@ export const TabContent: React.FC<TabContentProps> = ({
                     </svg>
                     <span>インラインSVG</span>
                   </div>
-                ) : isValidImageUrl(image.src) ? (
-                  <img 
-                    src={getProxiedImageUrl(image.src, auth)} 
-                    alt={image.alt || `画像 ${image.index}`}
-                    className="image-preview-full"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      if (e.currentTarget.nextElementSibling) {
-                        (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
-                      }
-                    }}
-                  />
                 ) : (
-                  <div className="image-fallback-full">
-                    <ImageIcon size={32} />
-                    <span>画像を読み込めません</span>
-                  </div>
+                  <ImageRendererFull
+                    src={image.src}
+                    alt={image.alt || `画像 ${image.index}`}
+                    auth={auth}
+                  />
                 )}
-                <div className="image-fallback-full" style={{ display: 'none' }}>
-                  <ImageIcon size={32} />
-                  <span>画像を読み込めません</span>
-                </div>
               </div>
               
               <div className="image-info-card">
@@ -410,28 +379,11 @@ export const TabContent: React.FC<TabContentProps> = ({
               {/* 画像問題の場合は画像プレビューを表示 */}
               {issue.src && title === '画像' && (
                 <div className="issue-image-preview">
-                  {isValidImageUrl(issue.src) ? (
-                    <img 
-                      src={getProxiedImageUrl(issue.src, auth)} 
-                      alt="問題のある画像"
-                      className="issue-preview-image"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        if (e.currentTarget.nextElementSibling) {
-                          (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
-                        }
-                      }}
-                    />
-                  ) : (
-                    <div className="issue-image-fallback">
-                      <ImageIcon size={32} />
-                      <span>画像を読み込めません</span>
-                    </div>
-                  )}
-                  <div className="issue-image-fallback" style={{ display: 'none' }}>
-                    <ImageIcon size={32} />
-                    <span>画像を読み込めません</span>
-                  </div>
+                  <ImageRendererIssue
+                    src={issue.src}
+                    alt="問題のある画像"
+                    auth={auth}
+                  />
                 </div>
               )}
               
@@ -1284,4 +1236,4 @@ export const TabContent: React.FC<TabContentProps> = ({
       {renderIssueModal()}
     </div>
   );
-};
+});

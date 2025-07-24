@@ -8,7 +8,7 @@ interface TabNavigationProps {
   issues: CheckResult['issues'];
 }
 
-export const TabNavigation: React.FC<TabNavigationProps> = ({
+export const TabNavigation: React.FC<TabNavigationProps> = React.memo(({
   activeTab,
   onTabChange,
   issues,
@@ -91,4 +91,4 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
       })}
     </nav>
   );
-};
+});

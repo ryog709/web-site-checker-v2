@@ -100,6 +100,20 @@ export interface Issue {
   linkHtml?: string;
   fileSize?: number;
   fileSizeMB?: number;
+  // Lighthouse issues properties
+  id?: string;
+  title?: string;
+  description?: string;
+  score?: number;
+  displayValue?: string;
+  help?: string;
+  helpUrl?: string;
+  // Axe issues properties
+  impact?: string;
+  tags?: string[];
+  nodes?: any[];
+  translation?: string;
+  target?: string[];
 }
 
 export interface LighthouseIssue {

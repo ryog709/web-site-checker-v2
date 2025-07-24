@@ -1,76 +1,49 @@
 import { useState } from 'react';
 import type { CheckResult, CrawlResult, BasicAuth } from './types/index.js';
-import { checkSinglePage, crawlSite, countPages, ApiError, type PageCountResult } from './utils/api.js';
+import { checkSinglePage, crawlSite, countPages, type PageCountResult } from './utils/api.js';
 import { UrlForm } from './components/UrlForm.js';
 import { Dashboard } from './components/Dashboard.js';
 import { LoadingSpinner } from './components/LoadingSpinner.js';
+import { useErrorHandler } from './hooks/useErrorHandler.js';
 import './App.css';
 
 function App() {
-  const [isLoading, setIsLoading] = useState(false);
+  const { error, isLoading, handleAsync, clearError } = useErrorHandler();
   const [result, setResult] = useState<CheckResult | CrawlResult | null>(null);
-  const [error, setError] = useState<string>('');
   const [pageCountResult, setPageCountResult] = useState<PageCountResult | null>(null);
   const [pendingCrawlData, setPendingCrawlData] = useState<{startUrl: string, auth?: BasicAuth} | null>(null);
 
   const handleSingleCheck = async (url: string, auth?: BasicAuth) => {
-    setIsLoading(true);
-    setError('');
     setResult(null);
-
-    try {
-      const checkResult = await checkSinglePage(url, auth);
+    clearError();
+    
+    const checkResult = await handleAsync(() => checkSinglePage(url, auth));
+    if (checkResult) {
       setResult(checkResult);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-      } else {
-        setError('An unexpected error occurred');
-      }
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleCountPages = async (startUrl: string, auth?: BasicAuth) => {
-    setIsLoading(true);
-    setError('');
     setResult(null);
     setPageCountResult(null);
+    clearError();
 
-    try {
-      const countResult = await countPages(startUrl, auth);
+    const countResult = await handleAsync(() => countPages(startUrl, auth));
+    if (countResult) {
       setPageCountResult(countResult);
       setPendingCrawlData({ startUrl, auth });
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-      } else {
-        setError('An unexpected error occurred');
-      }
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleCrawl = async (startUrl: string, urls?: string[], auth?: BasicAuth) => {
-    setIsLoading(true);
-    setError('');
     setResult(null);
+    clearError();
 
-    try {
-      const crawlResult = await crawlSite(startUrl, urls, auth);
+    const crawlResult = await handleAsync(() => crawlSite(startUrl, urls, auth));
+    if (crawlResult) {
       setResult(crawlResult);
       setPageCountResult(null);
       setPendingCrawlData(null);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-      } else {
-        setError('An unexpected error occurred');
-      }
-    } finally {
-      setIsLoading(false);
     }
   };
 

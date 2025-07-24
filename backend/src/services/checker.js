@@ -4,6 +4,7 @@ import AxePuppeteer from '@axe-core/puppeteer';
 import * as cheerio from 'cheerio';
 import os from 'os';
 import fs from 'fs';
+import { resolveAbsoluteUrl, isValidUrl, isHttpUrl, filterSameDomainLinks, filterWordPressUrls, containsJapanese, normalizeUrl, deduplicateUrls, filterCrawlableUrls } from '../utils/url-utils.js';
 
 /**
  * OS別のChrome実行ファイルパスを取得
@@ -471,17 +472,8 @@ function getAllHeadings($) {
             const width = $img.attr('width');
             const height = $img.attr('height');
 
-            // 相対URLを絶対URLに変換（簡易版）
-            let absoluteSrc = src;
-            if (src && !src.startsWith('http') && !src.startsWith('data:')) {
-                if (src.startsWith('//')) {
-                    absoluteSrc = 'https:' + src;
-                } else if (src.startsWith('/')) {
-                    absoluteSrc = new URL(src, global.currentUrl || 'https://example.com').href;
-                } else {
-                    absoluteSrc = new URL(src, global.currentUrl || 'https://example.com').href;
-                }
-            }
+            // 相対URLを絶対URLに変換
+            const absoluteSrc = resolveAbsoluteUrl(src, global.currentUrl);
 
             images.push({
                 src: absoluteSrc,
@@ -621,16 +613,7 @@ async function getAllImages($, page = null) {
         const height = $img.attr('height');
 
         // 相対URLを絶対URLに変換
-        let absoluteSrc = src;
-        if (src && !src.startsWith('http') && !src.startsWith('data:')) {
-            if (src.startsWith('//')) {
-                absoluteSrc = 'https:' + src;
-            } else if (src.startsWith('/')) {
-                absoluteSrc = new URL(src, global.currentUrl || 'https://example.com').href;
-            } else {
-                absoluteSrc = new URL(src, global.currentUrl || 'https://example.com').href;
-            }
-        }
+        const absoluteSrc = resolveAbsoluteUrl(src, global.currentUrl);
 
         // 親要素情報を取得
         const isInHeader = $img.closest('header').length > 0;
@@ -740,16 +723,7 @@ async function analyzeImages($) {
         const height = $img.attr('height');
 
         // 相対URLを絶対URLに変換
-        let absoluteSrc = src;
-        if (src && !src.startsWith('http') && !src.startsWith('data:')) {
-            if (src.startsWith('//')) {
-                absoluteSrc = 'https:' + src;
-            } else if (src.startsWith('/')) {
-                absoluteSrc = new URL(src, global.currentUrl || 'https://example.com').href;
-            } else {
-                absoluteSrc = new URL(src, global.currentUrl || 'https://example.com').href;
-            }
-        }
+        const absoluteSrc = resolveAbsoluteUrl(src, global.currentUrl);
 
         // alt属性チェック
         if (alt === undefined) {
