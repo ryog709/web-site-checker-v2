@@ -55,7 +55,9 @@ export const useRecommendationGenerator = (dataUrl: string) => {
         // 遅延読み込み（lazy loading）の提案
         if (issues?.allImages) {
           const lazyLoadCandidates = (issues?.allImages || []).filter((img: ImageInfo) => 
-            img.loading !== 'lazy' && img.index > 2 // 3番目以降の画像のみ
+            img.loading !== 'lazy' && 
+            (img.index > 3 || (img.isInFirstView === false)) && // 4番目以降、またはファーストビューにない画像のみ
+            img.src && !img.src.includes('svg-inline') // SVG画像は除外
           );
           if (lazyLoadCandidates.length > 5) {
             recommendations.push('画像の遅延読み込み（lazy loading）を実装');
