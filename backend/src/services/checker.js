@@ -687,6 +687,9 @@ async function getAllImages($, page = null) {
         const width = $svg.attr('width');
         const height = $svg.attr('height');
 
+        // SVGの位置情報を取得（該当するものがあれば）
+        const svgPositionInfo = imagePositions.find(pos => pos.index === images.length);
+
         images.push({
             index: images.length + 1,
             src: 'svg-inline',
@@ -699,7 +702,32 @@ async function getAllImages($, page = null) {
             hasDimensions: !!(width && height),
             filename: 'inline-svg',
             type: 'svg',
-            role: role
+            role: role,
+            
+            // ページ内での位置
+            isInHeader: $svg.closest('header').length > 0,
+            isInNav: $svg.closest('nav').length > 0,
+            isInFooter: $svg.closest('footer').length > 0,
+            location: $svg.closest('header').length > 0 ? 'header' : 
+                     $svg.closest('nav').length > 0 ? 'nav' :
+                     $svg.closest('footer').length > 0 ? 'footer' : 'content',
+            
+            // WebP関連（SVGでは不要）
+            isInPicture: false,
+            hasWebPAlternative: false,
+            webpSources: [],
+            
+            // 遅延読み込み（SVGでは通常不要だが、ファーストビュー判定のため設定）
+            loading: null,
+            hasLazyLoading: false,
+            position: svgPositionInfo ? {
+                top: svgPositionInfo.top,
+                left: svgPositionInfo.left,
+                width: svgPositionInfo.width,
+                height: svgPositionInfo.height
+            } : null,
+            isInFirstView: svgPositionInfo ? svgPositionInfo.isInFirstView : true, // 位置不明なら保守的にファーストビューとして扱う
+            isAboveFold: svgPositionInfo ? svgPositionInfo.isAboveFold : true
         });
     });
 
