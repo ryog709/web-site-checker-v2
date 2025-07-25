@@ -166,25 +166,27 @@ export interface SiteLink {
   title: string;
 }
 
+export interface Issues {
+  headings: Issue[];
+  headingsStructure: Heading[]; // 新しい項目を追加
+  images: Issue[];
+  allImages: ImageInfo[]; // 全ての画像情報を追加
+  links: Issue[];
+  meta: Issue[];
+  allMeta: MetaInfo[]; // 全てのメタ情報を追加
+  htmlStructure: Issue[]; // HTML構造チェック結果を追加
+  accessibility: {
+    lighthouse: LighthouseIssue[];
+    axe: AxeViolation[];
+  };
+  consoleErrors: ConsoleError[]; // コンソールエラーを追加
+}
+
 export interface CheckResult {
   url: string;
   timestamp: string;
   scores: LighthouseScores;
-  issues: {
-    headings: Issue[];
-    headingsStructure: Heading[]; // 新しい項目を追加
-    images: Issue[];
-    allImages: ImageInfo[]; // 全ての画像情報を追加
-    links: Issue[];
-    meta: Issue[];
-    allMeta: MetaInfo[]; // 全てのメタ情報を追加
-    htmlStructure: Issue[]; // HTML構造チェック結果を追加
-    accessibility: {
-      lighthouse: LighthouseIssue[];
-      axe: AxeViolation[];
-    };
-    consoleErrors: ConsoleError[]; // コンソールエラーを追加
-  };
+  issues: Issues;
   siteLinks?: SiteLink[]; // 他ページへのリンク一覧を追加
   auth?: BasicAuth; // 使用された認証情報を保存
   error?: string;

@@ -84,8 +84,6 @@ function App() {
       <main className="app-main">
         <UrlForm
           onSingleCheck={handleSingleCheck}
-          onCrawl={handleCrawl}
-          onCountPages={handleCountPages}
           onDirectCrawl={handleDirectCrawl}
           isLoading={isLoading}
         />
