@@ -47,6 +47,22 @@ function App() {
     }
   };
 
+  const handleDirectCrawl = async (startUrl: string, auth?: BasicAuth) => {
+    setResult(null);
+    setPageCountResult(null);
+    clearError();
+
+    // まずページ数を調査
+    const countResult = await handleAsync(() => countPages(startUrl, auth));
+    if (countResult) {
+      // ページ数調査が成功したら、直接クロールを実行
+      const crawlResult = await handleAsync(() => crawlSite(startUrl, countResult.urls, auth));
+      if (crawlResult) {
+        setResult(crawlResult);
+      }
+    }
+  };
+
   const handleConfirmCrawl = () => {
     if (pendingCrawlData && pageCountResult) {
       handleCrawl(pendingCrawlData.startUrl, pageCountResult.urls, pendingCrawlData.auth);
@@ -70,6 +86,7 @@ function App() {
           onSingleCheck={handleSingleCheck}
           onCrawl={handleCrawl}
           onCountPages={handleCountPages}
+          onDirectCrawl={handleDirectCrawl}
           isLoading={isLoading}
         />
 
