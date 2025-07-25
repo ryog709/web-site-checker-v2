@@ -12,8 +12,8 @@ interface UrlFormProps {
 
 export const UrlForm: React.FC<UrlFormProps> = ({
   onSingleCheck,
-  onCrawl: _onCrawl,
-  onCountPages: _onCountPages,
+  onCrawl,
+  onCountPages,
   onDirectCrawl,
   isLoading,
 }) => {

@@ -371,13 +371,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
                   </div>
                   <div className="page-scores">
                     <div className="mini-score">
-                      <span>A11y: {page.scores?.accessibility || 0}</span>
+                      <span>Accessibility: {page.scores?.accessibility || 0}</span>
                     </div>
                     <div className="mini-score">
                       <span>SEO: {page.scores?.seo || 0}</span>
                     </div>
                     <div className="mini-score">
                       <span>Performance: {page.scores?.performance || 0}</span>
+                    </div>
+                    <div className="mini-score">
+                      <span>Best Practices: {page.scores?.bestpractices || 0}</span>
                     </div>
                   </div>
                 </div>
@@ -414,13 +417,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
                     </div>
                     <div className="page-scores">
                       <div className="mini-score">
-                        <span>A11y: {page.scores?.accessibility || 0}</span>
+                        <span>Accessibility: {page.scores?.accessibility || 0}</span>
                       </div>
                       <div className="mini-score">
                         <span>SEO: {page.scores?.seo || 0}</span>
                       </div>
                       <div className="mini-score">
                         <span>Performance: {page.scores?.performance || 0}</span>
+                      </div>
+                      <div className="mini-score">
+                        <span>Best Practices: {page.scores?.bestpractices || 0}</span>
                       </div>
                     </div>
                   </div>
