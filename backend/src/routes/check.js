@@ -26,10 +26,10 @@ router.post('/check', validateUrlRouteHandler(async (req, res) => {
  * POST /api/count-pages
  */
 router.post('/count-pages', validateUrlRouteHandler(async (req, res) => {
-    const { startUrl, auth } = req.body;
-    const result = await countPages(startUrl, auth);
+    const { url, auth } = req.body;
+    const result = await countPages(url, auth);
     res.json(result);
-}, 'Page counting', 'startUrl'));
+}, 'Page counting'));
 
 /**
  * サイト全体のクロール診断API

@@ -4,15 +4,13 @@ import type { BasicAuth } from '../types/index.js';
 
 interface UrlFormProps {
   onSingleCheck: (url: string, auth?: BasicAuth) => Promise<void>;
-  onCrawl: (startUrl: string, urls?: string[], auth?: BasicAuth) => Promise<void>;
-  onCountPages: (startUrl: string, auth?: BasicAuth) => Promise<void>;
+  onDirectCrawl: (startUrl: string, auth?: BasicAuth) => Promise<void>;
   isLoading: boolean;
 }
 
 export const UrlForm: React.FC<UrlFormProps> = ({
   onSingleCheck,
-  onCrawl: _onCrawl,
-  onCountPages,
+  onDirectCrawl,
   isLoading,
 }) => {
   const [url, setUrl] = useState('');
@@ -35,7 +33,7 @@ export const UrlForm: React.FC<UrlFormProps> = ({
     if (mode === 'single') {
       onSingleCheck(normalizedUrl, auth);
     } else {
-      onCountPages(normalizedUrl, auth);
+      onDirectCrawl(normalizedUrl, auth);
     }
   };
 
