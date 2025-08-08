@@ -34,8 +34,25 @@ async function makeRequest<T>(url: string, options: RequestInit = {}): Promise<T
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error('API Error Response:', errorData);
+      
+      // HTTPステータスコードに基づく日本語エラーメッセージ
+      const statusMessages: Record<number, string> = {
+        400: '入力内容に誤りがあります',
+        401: '認証が必要です',
+        403: 'アクセスが拒否されました',
+        404: 'リソースが見つかりません',
+        408: 'リクエストがタイムアウトしました',
+        429: 'リクエストが多すぎます。しばらく待ってから再試行してください',
+        500: 'サーバーエラーが発生しました',
+        502: 'ゲートウェイエラーが発生しました',
+        503: 'サービスが一時的に利用できません',
+        504: 'ゲートウェイタイムアウトが発生しました'
+      };
+      
+      const defaultMessage = statusMessages[response.status] || `HTTPエラー ${response.status}`;
+      
       throw new ApiError(
-        errorData.message || errorData.error || `HTTP ${response.status}`,
+        errorData.message || errorData.error || defaultMessage,
         response.status
       );
     }
@@ -50,7 +67,21 @@ async function makeRequest<T>(url: string, options: RequestInit = {}): Promise<T
     console.error('Network error details:', error);
     console.error('Error type:', typeof error);
     console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
-    throw new ApiError(`Network error or server unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    
+    // ネットワークエラーの詳細な日本語メッセージ
+    let networkErrorMessage = 'ネットワークエラーが発生しました';
+    
+    if (error instanceof Error) {
+      if (error.message.includes('Failed to fetch')) {
+        networkErrorMessage = 'サーバーに接続できません。サーバーが起動しているか確認してください';
+      } else if (error.message.includes('NetworkError')) {
+        networkErrorMessage = 'ネットワーク接続を確認してください';
+      } else if (error.message.includes('timeout')) {
+        networkErrorMessage = '接続がタイムアウトしました。もう一度お試しください';
+      }
+    }
+    
+    throw new ApiError(networkErrorMessage);
   }
 }
 

@@ -4,6 +4,7 @@ import { checkSinglePage, crawlSite, countPages, type PageCountResult } from './
 import { UrlForm } from './components/UrlForm.js';
 import { Dashboard } from './components/Dashboard.js';
 import { LoadingSpinner } from './components/LoadingSpinner.js';
+import { ErrorMessage } from './components/ErrorMessage.js';
 import { useErrorHandler } from './hooks/useErrorHandler.js';
 import './App.css';
 
@@ -117,9 +118,16 @@ function App() {
         )}
 
         {error && (
-          <div className="error-message" role="alert">
-            <strong>エラー:</strong> {error}
-          </div>
+          <ErrorMessage 
+            error={error} 
+            onRetry={() => {
+              clearError();
+              // 最後に試みた操作に応じて再試行
+              if (pendingCrawlData) {
+                handleCountPages(pendingCrawlData.startUrl, pendingCrawlData.auth);
+              }
+            }}
+          />
         )}
 
         {isLoading && <LoadingSpinner />}

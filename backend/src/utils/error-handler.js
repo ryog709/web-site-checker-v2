@@ -26,7 +26,16 @@ export function sendErrorResponse(res, statusCode, error, message, additionalDat
  * @param {string} validationError - バリデーションエラーメッセージ
  */
 export function handleValidationError(res, validationError) {
-    sendErrorResponse(res, 400, 'Validation Error', validationError);
+    // エラーメッセージを日本語化
+    const jpErrorMessages = {
+        'URL is required': 'URLを入力してください',
+        'Invalid URL format': '正しいURL形式で入力してください',
+        'URL must start with http:// or https://': 'URLは http:// または https:// で始まる必要があります',
+        'Invalid URL': '無効なURLです'
+    };
+    
+    const jpMessage = jpErrorMessages[validationError] || validationError;
+    sendErrorResponse(res, 400, '入力エラー', jpMessage);
 }
 
 /**
@@ -38,8 +47,17 @@ export function handleValidationError(res, validationError) {
 export function handleInternalError(res, error, operation) {
     console.error(`${operation} Error:`, error);
     
-    const errorMessage = error.message || 'An unexpected error occurred';
-    const errorTitle = `${operation} failed`;
+    // 操作名を日本語化
+    const operationNames = {
+        'Check': 'ページチェック',
+        'Crawl': 'サイトクロール',
+        'Page Count': 'ページ数カウント',
+        'Image Proxy': '画像取得'
+    };
+    
+    const jpOperation = operationNames[operation] || operation;
+    const errorMessage = error.message || '予期しないエラーが発生しました';
+    const errorTitle = `${jpOperation}に失敗しました`;
     
     sendErrorResponse(res, 500, errorTitle, errorMessage);
 }
@@ -96,16 +114,16 @@ export function handleImageProxyError(res, error) {
     
     // ネットワークエラーか判定
     if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
-        return sendErrorResponse(res, 404, 'Image not found', 'The requested image could not be found or is not accessible');
+        return sendErrorResponse(res, 404, '画像が見つかりません', '指定された画像が見つからないか、アクセスできません');
     }
     
     // タイムアウトエラーか判定
     if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
-        return sendErrorResponse(res, 408, 'Request timeout', 'The image request timed out');
+        return sendErrorResponse(res, 408, 'タイムアウトエラー', '画像の取得がタイムアウトしました');
     }
     
     // その他のエラー
-    sendErrorResponse(res, 500, 'Failed to proxy image', error.message);
+    sendErrorResponse(res, 500, '画像の取得に失敗', error.message);
 }
 
 /**
@@ -126,8 +144,8 @@ export function globalErrorHandler(err, req, res, next) {
     // 開発環境ではスタックトレースも含める
     const isDevelopment = process.env.NODE_ENV === 'development';
     const errorResponse = {
-        error: 'Internal Server Error',
-        message: err.message || 'An unexpected error occurred'
+        error: 'サーバーエラー',
+        message: err.message || '予期しないエラーが発生しました'
     };
     
     if (isDevelopment) {
