@@ -34,12 +34,32 @@ export function useErrorHandler(): UseErrorHandlerReturn {
             setState(prev => ({ ...prev, isLoading: false }));
             return result;
         } catch (err) {
-            let errorMessage = 'An unexpected error occurred';
+            let errorMessage = '予期しないエラーが発生しました';
             
             if (err instanceof ApiError) {
+                // バックエンドからのエラーメッセージをそのまま使用（既に日本語化済み）
                 errorMessage = err.message;
             } else if (err instanceof Error) {
-                errorMessage = err.message;
+                // ネットワークエラーなどの場合は日本語化
+                const errorTranslations: Record<string, string> = {
+                    'Network error': 'ネットワークエラーが発生しました',
+                    'Failed to fetch': 'サーバーへの接続に失敗しました',
+                    'Network error or server unavailable': 'ネットワークエラーまたはサーバーが利用できません',
+                    'timeout': 'タイムアウトしました'
+                };
+                
+                // エラーメッセージの翻訳を試みる
+                for (const [key, translation] of Object.entries(errorTranslations)) {
+                    if (err.message.toLowerCase().includes(key.toLowerCase())) {
+                        errorMessage = translation;
+                        break;
+                    }
+                }
+                
+                // 翻訳が見つからない場合は元のメッセージを使用
+                if (errorMessage === '予期しないエラーが発生しました' && err.message) {
+                    errorMessage = err.message;
+                }
             }
             
             setState({ isLoading: false, error: errorMessage });
