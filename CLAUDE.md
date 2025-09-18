@@ -110,3 +110,98 @@ cd backend && npm test -- validation.test.js
 ### URL処理
 - 相対画像URL解決に`backend/src/utils/url-utils.js`のヘルパー関数を使用
 - WordPressサイトの特殊なURL（`/feed/`, `/comments/`等）は自動フィルタリング
+
+## Claude Code開発ワークフロー
+
+### 推奨アプローチ（公式ベストプラクティス準拠）
+
+#### 1. 探索 → 計画 → 実装 → コミット (Explore, Plan, Code, Commit)
+```bash
+# ステップ1: 関連ファイルを読んで理解
+# - 既存のchecker.js構造を分析
+# - 型定義ファイル確認
+# - テストパターン確認
+
+# ステップ2: 詳細な計画作成
+# - 段階的リファクタリング計画
+# - 新旧並行実行での安全確認
+# - 各モジュールの分割方針
+
+# ステップ3: 段階的実装
+# - 1つのモジュールずつ分離
+# - 既存機能を維持
+# - テスト結果の同値確認
+
+# ステップ4: 明確な説明でコミット
+# - 各段階の変更内容を明記
+# - 新旧比較結果をコミットメッセージに含める
+```
+
+#### 2. テスト駆動開発（TDD）
+```bash
+# ステップ1: テスト作成（分析モジュール用）
+cd backend && npm test -- --grep "domAnalyzer"
+
+# ステップ2: テストが失敗することを確認
+# ステップ3: 最小限の実装でテストをパス
+# ステップ4: オーバーフィッティング回避の確認
+```
+
+### 現在のPhase 2実装優先順位
+
+#### 即座実行タスク（公式手法適用）
+1. **探索**: `backend/src/services/checker.js`の詳細分析
+2. **計画**: モジュール分割の詳細設計書作成
+3. **実装**: `domAnalyzer.js`の段階的作成
+4. **コミット**: 新旧比較結果付きコミット
+
+#### 具体的な次回セッション手順
+```bash
+# 現状確認（2分）
+npm run dev
+curl -X POST http://localhost:4000/api/check -H "Content-Type: application/json" -d '{"url": "https://example.com"}'
+
+# 詳細探索（5分）
+# checker.js の関数構造分析
+# types/index.ts の型定義確認
+
+# 計画作成（10分）
+# 段階的分割計画の作成
+# 安全確認手順の設計
+
+# 実装開始（30分）
+# domAnalyzer.js の作成
+# 新旧並行実行での検証
+```
+
+## コードスタイルガイドライン
+
+### ESModules使用
+- `import/export`構文使用
+- `package.json`で`"type": "module"`設定済み
+
+### エラーハンドリング
+- 構造化エラー（GeminiApiError等）使用
+- 適切なHTTPステータス返却
+
+### ファイル命名規則
+- バックエンド: `.js`（ESM）
+- フロントエンド: `.tsx/.ts`（TypeScript）
+- 設定ファイル: camelCase
+
+### Git コミット規則
+- 機能追加: `feat: 機能説明`
+- バグ修正: `fix: 修正内容`
+- リファクタリング: `refactor: 変更内容`
+- ドキュメント: `docs: 文書更新内容`
+
+## セキュリティとプライバシー
+
+### 機密情報管理
+- `.env`ファイルでAPI key管理
+- ログでAuth情報をマスキング
+- 画像プロキシでドメイン制限
+
+### HTTPS要求
+- 本番環境では HTTPS URL のみ許可
+- localhost以外での開発環境アクセス禁止
