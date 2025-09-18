@@ -111,7 +111,7 @@ export interface Issue {
   // Axe issues properties
   impact?: string;
   tags?: string[];
-  nodes?: any[];
+  nodes?: AxeNode[];
   translation?: string;
   target?: string[];
 }
@@ -122,6 +122,20 @@ export interface LighthouseIssue {
   description: string;
   score: number;
   displayValue?: string;
+}
+
+export interface AxeNode {
+  html: string;
+  impact?: string;
+  target: string[];
+  xpath?: string[];
+  ancestry?: string[];
+  boundingRect?: {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  };
 }
 
 export interface AxeViolation {

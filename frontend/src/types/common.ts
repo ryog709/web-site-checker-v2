@@ -5,7 +5,7 @@ export interface BasicAuth {
   password: string;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   timestamp: string;
