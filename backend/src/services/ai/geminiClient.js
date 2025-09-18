@@ -109,13 +109,19 @@ export class GeminiClient {
         throw new Error('No content in response');
       }
 
+      // Geminiが```json```で囲んだレスポンスをクリーンアップ
+      let cleanedContent = content.trim();
+      if (cleanedContent.startsWith('```json')) {
+        cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      }
+
       // JSONレスポンスの場合はパースを試行
       let parsedContent;
       try {
-        parsedContent = JSON.parse(content);
+        parsedContent = JSON.parse(cleanedContent);
       } catch (jsonError) {
         // JSONでない場合はそのまま文字列として扱う
-        parsedContent = { text: content };
+        parsedContent = { text: cleanedContent };
       }
 
       return {

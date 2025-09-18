@@ -27,7 +27,12 @@ Lighthouseとaxe-coreの技術的分析結果を基に、以下の観点からWe
   "score": 0-100の数値,
   "improvements": ["改善提案1", "改善提案2", "改善提案3"],
   "details": "詳細な分析結果"
-}`;
+}
+
+**重要**: 問題がない場合でも、必ず以下のように記載してください：
+- score: 0-30 (優秀)
+- improvements: ["特に大きな問題は見当たりません。現在の品質を維持してください。"]
+- details: "詳細な分析結果と評価理由"`;
 
   const contextData = {
     url,
@@ -51,7 +56,15 @@ Lighthouseとaxe-coreの技術的分析結果を基に、以下の観点からWe
 **主要な技術的問題**:
 ${contextData.criticalIssues.map(issue => `- ${issue}`).join('\n')}
 
-これらの技術的分析結果を踏まえ、Webサイトのコンテンツ品質を総合的に評価し、具体的な改善提案を提供してください。`;
+これらの技術的分析結果を踏まえ、Webサイトのコンテンツ品質を総合的に評価し、具体的な改善提案を提供してください。
+
+必ず以下のJSON形式で回答してください（他の文章は一切含めず、JSON のみを返してください）：
+
+{
+  "score": 20,
+  "improvements": ["特に大きな問題は見当たりません。現在の品質を維持してください。"],
+  "details": "このWebサイトは適切に設計されており、大きな問題は見当たりません。"
+}`;
 
   return {
     system: systemPrompt,
@@ -81,7 +94,12 @@ export function buildUsabilityPrompt(analysisData) {
   "score": 0-100の数値,
   "recommendations": ["推奨事項1", "推奨事項2", "推奨事項3"],
   "details": "詳細なユーザビリティ分析"
-}`;
+}
+
+**重要**: 問題がない場合でも、必ず以下のように記載してください：
+- score: 0-30 (優秀)
+- recommendations: ["ユーザビリティに大きな問題は見当たりません。現在の使いやすさを継続してください。"]
+- details: "詳細な分析結果と評価理由"`;
 
   const contextData = {
     url,
@@ -140,7 +158,14 @@ export function buildComprehensivePrompt(analysisData) {
   "weaknesses": ["弱み1", "弱み2", "弱み3"],
   "priorityActions": ["優先改善項目1", "優先改善項目2", "優先改善項目3"],
   "detailedReport": "詳細な総合分析レポート"
-}`;
+}
+
+**重要**: 問題がない場合でも、必ず以下のように記載してください：
+- overallScore: 0-30 (優秀)
+- strengths: サイトの良い点を具体的に記載
+- weaknesses: ["大きな問題は見当たりません"]または軽微な改善点
+- priorityActions: ["現在の品質を維持してください"]または軽微な改善提案
+- detailedReport: "詳細な総合評価結果"`;
 
   const fullContext = {
     url,
