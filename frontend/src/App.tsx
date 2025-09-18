@@ -13,10 +13,22 @@ function App() {
   const [result, setResult] = useState<CheckResult | CrawlResult | null>(null);
   const [pageCountResult, setPageCountResult] = useState<PageCountResult | null>(null);
   const [pendingCrawlData, setPendingCrawlData] = useState<{startUrl: string, auth?: BasicAuth} | null>(null);
+  
+  // 最後の操作を記録するステート（リトライ用）
+  const [lastOperation, setLastOperation] = useState<{
+    type: 'singleCheck' | 'countPages' | 'directCrawl' | 'crawl';
+    params: {
+      url?: string | undefined;
+      startUrl?: string | undefined;
+      urls?: string[] | undefined;
+      auth?: BasicAuth | undefined;
+    };
+  } | null>(null);
 
   const handleSingleCheck = async (url: string, auth?: BasicAuth) => {
     setResult(null);
     clearError();
+    setLastOperation({ type: 'singleCheck', params: { url, auth: auth || undefined } });
     
     const checkResult = await handleAsync(() => checkSinglePage(url, auth));
     if (checkResult) {
@@ -28,17 +40,19 @@ function App() {
     setResult(null);
     setPageCountResult(null);
     clearError();
+    setLastOperation({ type: 'countPages', params: { startUrl, auth: auth || undefined } });
 
     const countResult = await handleAsync(() => countPages(startUrl, auth));
     if (countResult) {
       setPageCountResult(countResult);
-      setPendingCrawlData({ startUrl, auth });
+      setPendingCrawlData({ startUrl, auth: auth || undefined });
     }
   };
 
   const handleCrawl = async (startUrl: string, urls?: string[], auth?: BasicAuth) => {
     setResult(null);
     clearError();
+    setLastOperation({ type: 'crawl', params: { startUrl, urls: urls || undefined, auth: auth || undefined } });
 
     const crawlResult = await handleAsync(() => crawlSite(startUrl, urls, auth));
     if (crawlResult) {
@@ -52,6 +66,7 @@ function App() {
     setResult(null);
     setPageCountResult(null);
     clearError();
+    setLastOperation({ type: 'directCrawl', params: { startUrl, auth: auth || undefined } });
 
     // まずページ数を調査
     const countResult = await handleAsync(() => countPages(startUrl, auth));
@@ -123,8 +138,30 @@ function App() {
             onRetry={() => {
               clearError();
               // 最後に試みた操作に応じて再試行
-              if (pendingCrawlData) {
-                handleCountPages(pendingCrawlData.startUrl, pendingCrawlData.auth);
+              if (lastOperation) {
+                const { type, params } = lastOperation;
+                switch (type) {
+                  case 'singleCheck':
+                    if (params.url) {
+                      handleSingleCheck(params.url, params.auth);
+                    }
+                    break;
+                  case 'countPages':
+                    if (params.startUrl) {
+                      handleCountPages(params.startUrl, params.auth);
+                    }
+                    break;
+                  case 'directCrawl':
+                    if (params.startUrl) {
+                      handleDirectCrawl(params.startUrl, params.auth);
+                    }
+                    break;
+                  case 'crawl':
+                    if (params.startUrl) {
+                      handleCrawl(params.startUrl, params.urls, params.auth);
+                    }
+                    break;
+                }
               }
             }}
           />
