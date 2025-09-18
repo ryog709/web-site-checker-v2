@@ -15,12 +15,12 @@ export const useRecommendationGenerator = (dataUrl: string) => {
       case 'performance':
         // 大きな画像の最適化提案
         if (issues?.allImages) {
-          const largeImages = issues.allImages.filter((img: ImageInfo) => 
-            (img.width > 1920 || img.height > 1080) && img.filename
+          const largeImages = issues.allImages.filter((img: ImageInfo) =>
+            ((img.width || 0) > 1920 || (img.height || 0) > 1080) && img.filename
           );
           if (largeImages.length > 0) {
             largeImages.slice(0, 3).forEach((img: ImageInfo) => {
-              recommendations.push(`大きな画像を最適化: **${img.filename}** (${img.width}×${img.height}px)`);
+              recommendations.push(`大きな画像を最適化: **${img.filename}** (${img.width || 0}×${img.height || 0}px)`);
             });
             if (largeImages.length > 3) {
               recommendations.push(`他 ${largeImages.length - 3}個の大きな画像も最適化が必要`);
@@ -44,9 +44,9 @@ export const useRecommendationGenerator = (dataUrl: string) => {
               title: 'WebP形式への変換候補',
               description: 'これらの画像をWebP形式に変換することでファイルサイズを削減できます',
               items: nonWebPImages.slice(0, 10).map((img: ImageInfo) => ({
-                filename: img.filename,
+                filename: img.filename || 'unknown',
                 src: img.src,
-                details: `現在のサイズ: ${img.width}×${img.height}px`
+                details: `現在のサイズ: ${img.width || 0}×${img.height || 0}px`
               }))
             });
           }
@@ -94,7 +94,7 @@ export const useRecommendationGenerator = (dataUrl: string) => {
               title: 'alt属性が不足している画像',
               description: 'スクリーンリーダーのためにalt属性を追加してください',
               items: noAltImages.slice(0, 10).map((issue: Issue) => {
-                const element = issue.element || issue.filename || issue.src || '';
+                const element = issue.element || issue.src || '';
                 return {
                   src: issue.src,
                   element: element,

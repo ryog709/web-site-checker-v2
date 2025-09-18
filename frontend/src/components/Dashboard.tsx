@@ -104,7 +104,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
             <div 
               key={index} 
               className="site-link-item"
-              onClick={() => onCheckPage && onCheckPage(link.url)}
+              onClick={() => onCheckPage?.(link.url)}
             >
               <div className="link-content">
                 <div className="link-text">
@@ -167,7 +167,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
         {isCrawlResult && !selectedPageUrl && (
           <PageIssuesList 
             result={result} 
-            onCheckPage={(url) => setSelectedPageUrl(url)}
+            onCheckPage={async (url: string) => {
+              setSelectedPageUrl(url);
+            }}
           />
         )}
         

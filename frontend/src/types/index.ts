@@ -29,13 +29,13 @@ export interface ImageInfo {
   index: number;
   src: string;
   originalSrc: string;
-  alt: string; // imgタグのalt属性 または SVGのaria-label/title
-  title: string;
+  alt: string | null; // imgタグのalt属性 または SVGのaria-label/title
+  title: string | null;
   width: number | null;
   height: number | null;
   hasAlt: boolean; // imgではalt属性の有無、SVGではaria-label/titleの有無
   hasDimensions: boolean;
-  filename: string;
+  filename: string | null;
   type?: 'svg' | 'img'; // 画像の種類（通常の画像 or インラインSVG）
   role?: string; // SVGのrole属性（img, presentation等）
   
@@ -69,17 +69,17 @@ export interface ImageInfo {
 
 export interface HeadingImage {
   src: string;
-  alt: string;
-  title: string;
+  alt: string | null;
+  title: string | null;
   width: number | null;
   height: number | null;
-  filename: string;
+  filename: string | null;
 }
 
 export interface Heading {
   level: number;
   tag: string;
-  text: string;
+  text: string | null;
   index: number;
   images: HeadingImage[];
   hasImage?: boolean;
@@ -111,9 +111,21 @@ export interface Issue {
   // Axe issues properties
   impact?: string;
   tags?: string[];
-  nodes?: AxeNode[];
-  translation?: string;
+  nodes?: number;
+  translation?: AxeTranslation;
   target?: string[];
+  // Additional optional fields
+  stack?: string;
+  location?: {
+    url: string;
+    lineNumber: number;
+    columnNumber: number;
+  };
+  url?: string;
+  failure?: {
+    errorText: string;
+  };
+  timestamp?: string;
 }
 
 export interface LighthouseIssue {
@@ -147,6 +159,12 @@ export interface AxeViolation {
   tags: string[];
   nodes: number;
   target?: string[]; // ハイライト機能で使用する要素セレクター
+}
+
+export interface AxeTranslation {
+  help: string;
+  description: string;
+  fixHint?: string;
 }
 
 export interface ConsoleError {

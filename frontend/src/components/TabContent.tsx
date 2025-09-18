@@ -279,7 +279,7 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                   <div className="attribute-row">
                     <span className="attribute-label">Alt:</span>
                     {image.hasAlt ? (
-                      <span className="attribute-value alt-present">"{image.alt}"</span>
+                      <span className="attribute-value alt-present">"{image.alt || ''}"</span>
                     ) : (
                       <span className="attribute-value alt-missing">⚠️ なし</span>
                     )}
@@ -288,14 +288,14 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                   <div className="attribute-row">
                     <span className="attribute-label">Width:</span>
                     <span className={`attribute-value ${image.width ? 'dimension-present' : 'dimension-missing'}`}>
-                      {image.width || '❌ なし'}
+                      {image.width ?? '❌ なし'}
                     </span>
                   </div>
                   
                   <div className="attribute-row">
                     <span className="attribute-label">Height:</span>
                     <span className={`attribute-value ${image.height ? 'dimension-present' : 'dimension-missing'}`}>
-                      {image.height || '❌ なし'}
+                      {image.height ?? '❌ なし'}
                     </span>
                   </div>
                   
@@ -308,7 +308,7 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                   
                   <div className="attribute-row">
                     <span className="attribute-label">ファイル:</span>
-                    <span className="attribute-value filename">{image.filename}</span>
+                    <span className="attribute-value filename">{image.filename || 'ファイル名不明'}</span>
                   </div>
                   
                   {image.type === 'svg' && (
@@ -521,8 +521,8 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                       <span className="affected-elements">{violation.nodes}箇所で検出</span>
                     </div>
                     
-                    <h5 className="violation-help">{translation.help}</h5>
-                    <p className="violation-description">{translation.description}</p>
+                    <h5 className="violation-help">{translation?.help || violation.help}</h5>
+                    <p className="violation-description">{translation?.description || 'Description not available'}</p>
                     
                     {/* 該当箇所の詳細表示 */}
                     {violation.target && violation.target.length > 0 && (
@@ -561,7 +561,7 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                       </div>
                     )}
                     
-                    {translation.fixHint && (
+                    {translation?.fixHint && (
                       <div className="fix-hint">
                         <strong>修正のヒント:</strong>
                         <span>{translation.fixHint}</span>
@@ -1094,7 +1094,7 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
       <Modal
         isOpen={!!selectedIssue}
         onClose={() => setSelectedIssue(null)}
-        title={isLighthouse ? selectedIssue.title : isWCAG ? selectedIssue.help : selectedIssue.message}
+        title={isLighthouse ? (selectedIssue.title || '詳細') : isWCAG ? (selectedIssue.help || '詳細') : (selectedIssue.message || '詳細')}
       >
         <div className="modal-content-modern">
           {isLighthouse && (
@@ -1122,20 +1122,20 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
             <>
               <div className="modal-section">
                 <strong>問題の説明:</strong>
-                <p>{selectedIssue.translation?.description || selectedIssue.description}</p>
+                <p>{selectedIssue.translation?.description || selectedIssue.description || 'No description available'}</p>
               </div>
               
               {selectedIssue.translation?.fixHint && (
                 <div className="modal-section fix-hint-section">
                   <strong>💡 修正のヒント:</strong>
-                  <p>{selectedIssue.translation.fixHint}</p>
+                  <p>{selectedIssue.translation?.fixHint}</p>
                 </div>
               )}
               
               <div className="modal-section">
                 <strong>影響レベル:</strong>
                 <span className={`impact-badge impact-${selectedIssue.impact}`}>
-                  {translateImpact(selectedIssue.impact)}
+                  {translateImpact(selectedIssue.impact || 'minor')}
                 </span>
               </div>
               
@@ -1152,11 +1152,11 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
               <div className="modal-section">
                 <strong>関連ガイドライン:</strong>
                 <div className="tags-list-modern">
-                  {selectedIssue.tags.map((tag: string) => (
+                  {selectedIssue.tags?.map((tag: string) => (
                     <span key={tag} className="tag-modern">
                       {translateWcagTag(tag) || tag}
                     </span>
-                  ))}
+                  )) || []}
                 </div>
               </div>
               
