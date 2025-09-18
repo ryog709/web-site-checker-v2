@@ -5,6 +5,7 @@ import { SummaryCards } from './SummaryCards.js';
 import { TabNavigation } from './TabNavigation.js';
 import { TabContent } from './TabContent.js';
 import { PageIssuesList } from './PageIssuesList.js';
+import { SemanticAnalysisComponent } from './SemanticAnalysis.js';
 import { useRecommendationGenerator } from './RecommendationGenerator.js';
 import { Calendar, Clock, Globe } from 'lucide-react';
 
@@ -220,6 +221,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
                 />
               </div>
             </div>
+
+            {/* AI分析セクション */}
+            {data.semanticAnalysis && (
+              <div className="semantic-analysis-section">
+                <SemanticAnalysisComponent analysis={data.semanticAnalysis} />
+              </div>
+            )}
 
             <div className="details-section">
               <TabNavigation

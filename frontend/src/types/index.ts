@@ -214,12 +214,46 @@ export interface Issues {
   consoleErrors: ConsoleError[]; // コンソールエラーを追加
 }
 
+export interface GeminiAnalysisResponse {
+  contentQuality?: {
+    score: number;
+    improvements: string[];
+    details: string;
+  };
+  usabilityInsights?: {
+    score: number;
+    recommendations: string[];
+    details: string;
+  };
+  comprehensiveAnalysis?: {
+    overallScore: number;
+    strengths: string[];
+    weaknesses: string[];
+    priorityActions: string[];
+    detailedReport: string;
+  };
+  textAnalysis?: string; // テキスト形式の分析結果
+  generatedAt: string;
+  modelUsed: string;
+  tokensUsed?: number;
+}
+
+export interface SemanticAnalysis {
+  geminiAnalysis?: GeminiAnalysisResponse;
+  isEnabled: boolean;
+  error?: string;
+  errorCode?: string;
+  processingTime?: number;
+  cached?: boolean;
+}
+
 export interface CheckResult {
   url: string;
   timestamp: string;
   scores: LighthouseScores;
   issues: Issues;
   siteLinks?: SiteLink[]; // 他ページへのリンク一覧を追加
+  semanticAnalysis?: SemanticAnalysis; // Gemini AI分析結果を追加
   auth?: BasicAuth; // 使用された認証情報を保存
   error?: string;
 }

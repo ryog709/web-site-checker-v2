@@ -5,6 +5,28 @@ import * as cheerio from 'cheerio';
 import os from 'os';
 import fs from 'fs';
 import { resolveAbsoluteUrl, isValidUrl, isHttpUrl, filterSameDomainLinks, filterWordPressUrls, containsJapanese, normalizeUrl, deduplicateUrls, filterCrawlableUrls } from '../utils/url-utils.js';
+import { GeminiService } from './ai/geminiService.js';
+import { getGeminiConfig, isGeminiConfigValid } from '../config/gemini.js';
+
+// Geminiサービスインスタンス（遅延初期化）
+let geminiService = null;
+
+/**
+ * Geminiサービスインスタンスを取得（シングルトンパターン）
+ * @returns {GeminiService|null} Geminiサービスインスタンス
+ */
+function getGeminiService() {
+    if (!isGeminiConfigValid()) {
+        return null;
+    }
+
+    if (!geminiService) {
+        const config = getGeminiConfig();
+        geminiService = new GeminiService(config);
+    }
+
+    return geminiService;
+}
 
 /**
  * OS別のChrome実行ファイルパスを取得
@@ -168,6 +190,39 @@ export async function checkSinglePage(url, auth = null) {
         // 同じドメインの他のページリンクを収集
         const siteLinks = await collectSiteLinks(page, url);
 
+        // Gemini AI分析を実行（非同期、オプション）
+        let semanticAnalysis = {
+            isEnabled: false
+        };
+
+        const geminiServiceInstance = getGeminiService();
+        if (geminiServiceInstance) {
+            try {
+                console.log('🧠 Starting Gemini AI analysis...');
+                const analysisStartTime = Date.now();
+
+                semanticAnalysis = await geminiServiceInstance.analyzeWebsite({
+                    url,
+                    lighthouseResults,
+                    axeResults,
+                    analysisType: 'content-quality' // デフォルトはコンテンツ品質分析
+                });
+
+                const analysisTime = Date.now() - analysisStartTime;
+                console.log(`✅ Gemini analysis completed in ${analysisTime}ms`);
+
+            } catch (error) {
+                console.warn('⚠️ Gemini analysis failed:', error.message);
+                semanticAnalysis = {
+                    isEnabled: true,
+                    error: error.message,
+                    errorCode: error.code || 'UNKNOWN_ERROR'
+                };
+            }
+        } else {
+            console.log('ℹ️ Gemini AI analysis is disabled');
+        }
+
         return {
             url,
             timestamp: new Date().toISOString(),
@@ -181,6 +236,7 @@ export async function checkSinglePage(url, auth = null) {
                 consoleErrors: consoleErrors
             },
             siteLinks, // 他ページへのリンク一覧を追加
+            semanticAnalysis, // Gemini AI分析結果を追加
             auth: auth // 認証情報を結果に含める
         };
     } finally {
