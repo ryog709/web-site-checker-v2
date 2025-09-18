@@ -13,6 +13,12 @@ export class ApiError extends Error {
   }
 }
 
+interface ApiResponse<T> {
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
 async function makeRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
   const fullUrl = `${API_BASE_URL}${url}`;
   console.log('Making API request to:', fullUrl);
@@ -32,7 +38,7 @@ async function makeRequest<T>(url: string, options: RequestInit = {}): Promise<T
     console.log('Response ok:', response.ok);
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData: ApiResponse<unknown> = await response.json().catch(() => ({}));
       console.error('API Error Response:', errorData);
       
       // HTTPステータスコードに基づく日本語エラーメッセージ
@@ -57,7 +63,7 @@ async function makeRequest<T>(url: string, options: RequestInit = {}): Promise<T
       );
     }
 
-    const data = await response.json();
+    const data: T = await response.json();
     console.log('API Response success:', data);
     return data;
   } catch (error) {

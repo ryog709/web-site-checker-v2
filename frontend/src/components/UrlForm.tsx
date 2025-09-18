@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Search, Globe, Lock } from 'lucide-react';
 import type { BasicAuth } from '../types/index.js';
 
