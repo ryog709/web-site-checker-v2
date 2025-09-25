@@ -142,7 +142,7 @@ frontend/src/
 - [ ] DOM/Lighthouse/Axe 結果を旧レスポンス形式へ変換する `legacyResultMapper`（新規モジュール）を作成
 - [ ] `checker.js` を薄いラッパー化（互換層のみ保持）し、`routes/check.js` はまず旧関数を利用
 - [ ] 段階的に `/api/check` → `/api/crawl` → `/api/count-pages` を新パイプラインへ切り替える移行計画を記録
-- [ ] 進捗・比較結果を `claudedocs/progress-log.md` に追記
+- [ ] 進捗・比較結果を `docs/progress-log.md` に追記
 
 **対象ファイル**
 ```

@@ -6,8 +6,8 @@
 ## 📚 公式ベストプラクティス適用
 
 ### 0. コンテキスト同期 (必須)
-- `claudedocs/session-notes.md` を最初に読み、当日の前提・Pending TODO・検証コマンドを確認する
-- `claudedocs/progress-log.md` を参照し、前回のテスト結果と差分を把握する
+- `docs/session-notes.md` を最初に読み、当日の前提・Pending TODO・検証コマンドを確認する
+- `docs/progress-log.md` を参照し、前回のテスト結果と差分を把握する
 - 作業開始前に `implementation-roadmap.md` の Phase 2.1 DONE 条件を見直す
 
 ### 1. 探索フェーズ (Explore)
@@ -42,7 +42,7 @@ backend/test/pipeline-integration-test.js
 ### 4. コミットフェーズ (Commit)
 **目的**: 再現性ある説明と検証証跡を残す
 - フォーマット例: `refactor: migrate /api/check to AnalysisPipeline (compat verified)`
-- `claudedocs/progress-log.md` にテスト結果を追記してからコミットする
+- `docs/progress-log.md` にテスト結果を追記してからコミットする
 
 ---
 

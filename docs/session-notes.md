@@ -19,6 +19,6 @@ curl -X POST http://localhost:4000/api/check \
 ```
 
 ## 参考ドキュメント
-- `claudedocs/implementation-roadmap.md` Phase 2.1
-- `claudedocs/progress-log.md`
+- `docs/implementation-roadmap.md` Phase 2.1
+- `docs/progress-log.md`
 
