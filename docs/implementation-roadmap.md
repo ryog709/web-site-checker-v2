@@ -130,25 +130,58 @@ frontend/src/
 ## Phase 2: Advanced Analysis（実装順序）
 
 ### 2.1 パイプライン抽象化 + analyzer分割（最優先）
-**ステータス**: ⚠️ 差し戻し（パイプライン関連ソースが現行ブランチに不在）
+**ステータス**: 🔄 再実装フェーズ（2025-09-25 21:30 調査完了、パイプライン実装完全不在確認）
 
-**目標**: `checker.js` の責務を Analyzer / Pipeline / BrowserPool に移譲しつつ、LangChain 活用に向けた互換レイヤーを整備し、既存 API レスポンスと同値を維持する。現状ソース不在のため、過去実装の復元可否を判定し、必要なら再構築する。
+**目標**: `checker.js` の責務を Analyzer / Pipeline / legacyResultMapper に移譲し、LangChain 活用に向けた互換レイヤーを整備。既存 API レスポンスと完全同値を維持。
+
+**調査結果（2025-09-25）**:
+- git履歴・reflog・stash すべて検索 → `AnalysisPipeline` / `LighthouseAnalyzer` / `legacyResultMapper` 実装なし
+- **結論**: パイプライン実装を完全新規作成（Codex CLI提案の段階的アプローチ採用）
 
 **完了条件 (DONE)**
-- [ ] `/api/check` と `/api/check-pipeline` のレスポンス差分がゼロ（scores / issues / semanticAnalysis / siteLinks / consoleErrors / auth）である
+- [ ] `/api/check` と `/api/check-pipeline` のレスポンス差分がゼロ（scores / issues / semanticAnalysis / siteLinks / consoleErrors / auth）
 - [ ] `auth` 付きサイト・CORS 前提のケースで従来と同じ挙動を curl で確認し、`docs/progress-log.md` に実行結果を記録済み
-- [ ] DOM / Lighthouse / Axe / Gemini の各結果が旧実装と同値である（fallback スコアや空配列になっていない）
+- [ ] DOM / Lighthouse / Axe / Gemini の各結果が旧実装と同値（fallback スコアや空配列になっていない）
 - [ ] `collectSiteLinks`・`collectConsoleErrors` が pipeline で機能し、0 件でも証跡を残している
 - [ ] `docs/progress-log.md` に比較ログ・実行日時・検証コマンドを記録し、レビュー前にチェックリストを満たしたことを明示
 
-**タスクブレークダウン**
-- [ ] 過去ブランチ・コミット・stash を調査し、`AnalysisPipeline` / `LighthouseAnalyzer` / `legacyResultMapper` などの資産を復元可能か確認
-- [ ] 復元できない場合は `AnalysisPipeline` 骨格・`runAnalysis`・各 Analyzer ・`legacyResultMapper` を再実装する計画を策定
-- [ ] `AnalysisPipeline` に `auth` ハンドリング・リンク/console収集・Gemini呼び出しを実装
-- [ ] DOM/Lighthouse/Axe 結果を旧レスポンス形式へ変換する `legacyResultMapper` を整備し、空値の場合のログを出力
-- [ ] `/api/check-pipeline` で比較テスト用エンドポイントを維持しつつ、切り替え前に `progress-log.md` へ diff 結果を記載
-- [ ] `/api/check` → `/api/crawl` → `/api/count-pages` の順で切り替える段階計画を明文化
-- [ ] チェックリスト達成を `docs/session-notes.md` と `docs/progress-log.md` に記録してから完了報告する
+**再実装タスクブレークダウン（優先度順・Codex CLI提案）**
+
+**Step A: 基盤構築**
+- [ ] `legacyResultMapper.js` 作成
+  - 旧API `/api/check` のサンプルレスポンス抽出
+  - マッピング表作成（新形式→旧形式）
+  - `mapPipelineResultToLegacy(result)` スケルトン実装
+  - dummy入力でマッピング動作確認
+
+**Step B: パイプライン骨格**
+- [ ] `AnalysisPipeline/index.js` 作成
+  - `run(url, options)` エントリポイント実装
+  - スタブアナライザで土台確認
+  - Gemini連携・エラーハンドリング統合
+  - mapper適用とレスポンス返却確認
+
+**Step C: アナライザ段階的追加（各ステップで旧API diff記録）**
+- [ ] `analyzers/domAnalyzer.js`
+  - `analyze({page})` 実装（見出し/画像/リンク抽出）
+  - パイプラインに統合 → `/api/check` vs `/api/check-pipeline` diff
+  - progress-log.md に証跡記録
+
+- [ ] `analyzers/axeAnalyzer.js`
+  - `analyze({page})` 実装（axe-core実行・違反整形）
+  - パイプラインに統合 → diff記録
+  - 違反件数が旧APIと一致確認
+
+- [ ] `analyzers/lighthouseAnalyzer.js`
+  - `analyze({url})` 実装（WebSocket経由実測スコア）
+  - パイプラインに統合 → diff記録
+  - WebSocket接続成功ログ確認、fallback禁止
+
+**Step D: 統合検証**
+- [ ] 代表URL複数で `/api/check` vs `/api/check-pipeline` 全項目差分ゼロ確認
+- [ ] auth/CORS/siteLinks/consoleErrors 証跡完備
+- [ ] progress-log.md・session-notes.md 更新
+- [ ] `/api/check` 切り替え計画明文化（→ `/api/crawl` → `/api/count-pages`）
 
 **対象ファイル**
 ```

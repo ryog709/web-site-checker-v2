@@ -17,9 +17,38 @@
 3. Gemini 分析が `analyzeWebsite` で成功し、semanticAnalysis.geminiAnalysis にスコアなどが入っていること
 4. axe-core の違反数が旧APIと同じであること（0件ならゼロが一致していることをログ化）
 
-### 追加調査メモ（2025-09-25 11:40）
-- 現ブランチに `AnalysisPipeline` / `LighthouseAnalyzer` / `legacyResultMapper` 等のソースは存在せず、Phase 2.1 Step A のコードを再構築する必要がある可能性が高い
-- 今後の作業では過去ブランチ・コミットを検索し、実装の復元可否を判断した上で再実装計画を策定する
+### 追加調査メモ（2025-09-25 21:30）
+
+**実装資産調査結果**:
+- `backend/src/services/pipeline/` ディレクトリ存在、`analyzers/` サブディレクトリは空
+- git履歴・reflog・stash・未追跡ファイルすべて検索 → `AnalysisPipeline` / `LighthouseAnalyzer` / `legacyResultMapper` 実装なし
+- **結論**: パイプライン実装を完全に新規作成する必要あり
+
+**Codex CLI提案の再実装計画**:
+
+1. **実装順序**（依存関係考慮、リスク最小化）:
+   1. `legacyResultMapper.js` - 旧APIレスポンス構造マッピング（スケルトン）
+   2. `AnalysisPipeline/index.js` - 統合骨格（スタブアナライザで土台確認）
+   3. `analyzers/domAnalyzer.js` - DOM解析（見出し/画像/リンク）→ 旧API diff
+   4. `analyzers/axeAnalyzer.js` - axe-core違反検出 → 旧API diff
+   5. `analyzers/lighthouseAnalyzer.js` - WebSocket実測スコア取得 → 旧API diff
+   6. 統合検証: `/api/check` vs `/api/check-pipeline` 全項目差分ゼロ確認
+
+2. **各ファイル責務**:
+   - `legacyResultMapper.js`: `mapPipelineResultToLegacy(result)` - 新形式→旧形式一括変換
+   - `analysisPipeline/index.js`: `run(url, options)` - アナライザ統合・Gemini連携・エラー処理
+   - `analyzers/domAnalyzer.js`: `analyze({page})` - DOM統計抽出
+   - `analyzers/axeAnalyzer.js`: `analyze({page})` - axe-core実行・違反整形
+   - `analyzers/lighthouseAnalyzer.js`: `analyze({url})` - WebSocket経由Lighthouse実行
+
+3. **検証手順**（各フェーズ必須）:
+   - mapper完成時: 旧APIサンプル vs dummy出力で差分ゼロ
+   - 各アナライザ追加時: `/api/check` vs `/api/check-pipeline` diff記録
+   - 最終: 代表URL複数で差分ゼロ証跡化
+
+4. **証跡記録タイミング**:
+   - 各アナライザ導入時: diff結果・主要メトリクス（Lighthouse実測/Gemini/axe件数/siteLinks/consoleErrors）を progress-log.md に追記
+   - フェーズ完了時: diff ゼロログと計測証跡を保存
 
 記入ルール:
 - 1行 = 1コミット or 1つの大作業終了時点
