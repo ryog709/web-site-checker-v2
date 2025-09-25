@@ -1,5 +1,9 @@
 # Web Site Checker v2 - 実装ロードマップ
 
+## 長期ゴール
+- LangChain を核とする分析パイプラインを構築し、旧来の品質チェック精度を維持しつつさらに深い洞察と一貫したスコアリングを提供する
+- 新パイプラインへの移行過程でも既存 API の互換性と信頼性を担保し、ユーザー体験を変えずに高度化を進める
+
 ## 現状分析（Phase 1完了）
 
 ### ✅ 実装済み機能
@@ -128,7 +132,7 @@ frontend/src/
 ### 2.1 パイプライン抽象化 + analyzer分割（最優先）
 **ステータス**: ⏸ Pending（試験的パイプラインは存在するがAPIは旧checker.jsに依存）
 
-**目標**: `checker.js` の責務を Analyzer / Pipeline / BrowserPool に移譲しつつ、既存 API レスポンスと同値を維持する。
+**目標**: `checker.js` の責務を Analyzer / Pipeline / BrowserPool に移譲しつつ、LangChain 活用に向けた互換レイヤーを整備し、既存 API レスポンスと同値を維持する。
 
 **完了条件 (DONE)**
 - [ ] `/api/check` と `/api/check-pipeline` のレスポンス差分がゼロ（scores / issues / semanticAnalysis / siteLinks / consoleErrors / auth）である

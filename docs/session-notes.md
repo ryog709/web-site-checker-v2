@@ -3,6 +3,7 @@
 最新セッションの冒頭で必ずこのファイルを更新し、Claude Code には最初に参照させる。
 
 ## 今日の前提 (500文字以内)
+- 最終目標: LangChain を活用して品質チェック精度を引き上げる分析パイプラインを確立する
 - コミット基準点: Phase 2.1 Step A 調整中（互換レイヤー未達）
 - Phase 2.1 進捗: ⚠️ Step A 差し戻し - Lighthouse/Gemini/axe/リンク収集が未整備
 - 互換維持が必須なAPI: `/api/check`, `/api/crawl`, `/api/count-pages`
