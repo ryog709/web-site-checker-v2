@@ -126,17 +126,37 @@ frontend/src/
 ## Phase 2: Advanced Analysis（実装順序）
 
 ### 2.1 パイプライン抽象化 + analyzer分割（最優先）
-**目標**: checker.js を機能別に分割、テスト容易化
-```bash
-# 実装ファイル
-backend/src/services/pipeline/runAnalysis.ts
-backend/src/services/pipeline/analyzers/lighthouseAnalyzer.ts
-backend/src/services/pipeline/analyzers/axeAnalyzer.ts
-backend/src/services/pipeline/analyzers/domAnalyzer.ts
-backend/src/services/browser/browserPool.ts
+**ステータス**: ⏸ Pending（試験的パイプラインは存在するがAPIは旧checker.jsに依存）
+
+**目標**: `checker.js` の責務を Analyzer / Pipeline / BrowserPool に移譲しつつ、既存 API レスポンスと同値を維持する。
+
+**完了条件 (DONE)**
+- [ ] `/api/check` が `AnalysisPipeline` を経由し、レスポンス構造（scores, issues, siteLinks, semanticAnalysis, consoleErrors）が旧実装と一致する
+- [ ] `auth` 付きサイト・CORS 前提のケースで従来と同じ挙動を確認（curl テンプレートを残す）
+- [ ] DOM / Lighthouse / Axe / Gemini の各結果が欠落なくマッピングされ、差分比較テストで同値性確認済み
+- [ ] `collectSiteLinks`・`console error` 収集など旧checker.jsの副作用が pipeline 側に移植されている
+- [ ] `backend/test/pipeline-integration-test.js` で旧APIとの比較ログを取得し、ドキュメントに記録
+
+**タスクブレークダウン**
+- [ ] `AnalysisPipeline` に `auth` ハンドリング・リンク/console収集を実装
+- [ ] DOM/Lighthouse/Axe 結果を旧レスポンス形式へ変換する `legacyResultMapper`（新規モジュール）を作成
+- [ ] `checker.js` を薄いラッパー化（互換層のみ保持）し、`routes/check.js` はまず旧関数を利用
+- [ ] 段階的に `/api/check` → `/api/crawl` → `/api/count-pages` を新パイプラインへ切り替える移行計画を記録
+- [ ] 進捗・比較結果を `claudedocs/progress-log.md` に追記
+
+**対象ファイル**
+```
+backend/src/services/pipeline/runAnalysis.js
+backend/src/services/pipeline/analyzers/domAnalyzer.js
+backend/src/services/pipeline/analyzers/lighthouseAnalyzer.js
+backend/src/services/pipeline/analyzers/axeAnalyzer.js
+backend/src/services/browser/browserPool.js
+backend/src/services/checker.js
+backend/src/routes/check.js
+backend/test/pipeline-integration-test.js
 ```
 
-**検証**: 既存結果と同値確認
+**検証**: 差分比較ログ、curl テンプレート、E2E 起動確認
 
 ### 2.2 usability/comprehensive分析追加
 **目標**: promptBuilder.js拡張、analysisType複数対応
