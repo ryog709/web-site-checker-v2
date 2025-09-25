@@ -130,9 +130,9 @@ frontend/src/
 ## Phase 2: Advanced Analysis（実装順序）
 
 ### 2.1 パイプライン抽象化 + analyzer分割（最優先）
-**ステータス**: ⏸ Pending（試験的パイプラインは存在するがAPIは旧checker.jsに依存）
+**ステータス**: ⚠️ 差し戻し（パイプライン関連ソースが現行ブランチに不在）
 
-**目標**: `checker.js` の責務を Analyzer / Pipeline / BrowserPool に移譲しつつ、LangChain 活用に向けた互換レイヤーを整備し、既存 API レスポンスと同値を維持する。
+**目標**: `checker.js` の責務を Analyzer / Pipeline / BrowserPool に移譲しつつ、LangChain 活用に向けた互換レイヤーを整備し、既存 API レスポンスと同値を維持する。現状ソース不在のため、過去実装の復元可否を判定し、必要なら再構築する。
 
 **完了条件 (DONE)**
 - [ ] `/api/check` と `/api/check-pipeline` のレスポンス差分がゼロ（scores / issues / semanticAnalysis / siteLinks / consoleErrors / auth）である
@@ -142,8 +142,10 @@ frontend/src/
 - [ ] `docs/progress-log.md` に比較ログ・実行日時・検証コマンドを記録し、レビュー前にチェックリストを満たしたことを明示
 
 **タスクブレークダウン**
+- [ ] 過去ブランチ・コミット・stash を調査し、`AnalysisPipeline` / `LighthouseAnalyzer` / `legacyResultMapper` などの資産を復元可能か確認
+- [ ] 復元できない場合は `AnalysisPipeline` 骨格・`runAnalysis`・各 Analyzer ・`legacyResultMapper` を再実装する計画を策定
 - [ ] `AnalysisPipeline` に `auth` ハンドリング・リンク/console収集・Gemini呼び出しを実装
-- [ ] DOM/Lighthouse/Axe 結果を旧レスポンス形式へ変換する `legacyResultMapper` を作成し、空値の場合のログを出力
+- [ ] DOM/Lighthouse/Axe 結果を旧レスポンス形式へ変換する `legacyResultMapper` を整備し、空値の場合のログを出力
 - [ ] `/api/check-pipeline` で比較テスト用エンドポイントを維持しつつ、切り替え前に `progress-log.md` へ diff 結果を記載
 - [ ] `/api/check` → `/api/crawl` → `/api/count-pages` の順で切り替える段階計画を明文化
 - [ ] チェックリスト達成を `docs/session-notes.md` と `docs/progress-log.md` に記録してから完了報告する

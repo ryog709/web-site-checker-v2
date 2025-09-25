@@ -10,6 +10,7 @@
 - 重要制約: auth対応必須 / 既存レスポンス構造維持 / Lighthouse・axe・semanticAnalysis・siteLinks を旧APIと同値で返す
 
 ## ペンディング TODO
+- pipeline配下の Analyzer / ResultMapper / runAnalysis 不在のため過去ブランチ・コミットを調査し、復元可否を判定
 - Lighthouseの実スコア取得（WS接続 fix、fallback禁止）
 - Gemini分析の復旧（`analyzeWebsite` 使用、semanticAnalysisを埋める）
 - axe-core結果・siteLinks・consoleErrors の旧API同値確認
