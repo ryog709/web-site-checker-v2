@@ -9,6 +9,8 @@
 
 ## 2. 作業ステップ（Phase 2.1）
 - Step A: 互換レイヤー整備（`legacyResultMapper` とレスポンス同値性の検証）
+  - `/api/check` と `/api/check-pipeline` の diff がゼロになるまで完了報告禁止
+  - Lighthouse 実スコア / Gemini semanticAnalysis / axe違反件数 / siteLinks / consoleErrors を旧APIと一致させ、証跡を `docs/progress-log.md` に記録
 - Step B: `/api/check` 切り替え（auth 含む curl テスト必須）
 - Step C: `/api/crawl`・`/api/count-pages` 移行（BrowserPool リソース監視）
 - Step D: LangChain 導入準備（Analyzer インターフェースの抽象化）
@@ -32,4 +34,3 @@
 ## 6. 連絡事項
 - ドキュメントと実装に齟齬を見つけた場合は作業を停止し、ドキュメント更新または相談を優先してください
 - 重大な互換性リスクやテスト失敗は `progress-log.md` とコミットメッセージの両方に記録してください
-

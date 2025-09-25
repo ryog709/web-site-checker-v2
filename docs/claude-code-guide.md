@@ -51,7 +51,12 @@ backend/test/pipeline-integration-test.js
 ### Step A: パイプライン互換レイヤー整備
 - `AnalysisPipeline` の出力を旧レスポンス形式に変換する `legacyResultMapper` を実装
 - `checker.js` は `AnalysisPipeline` を呼び出しつつ互換レスポンスを返す薄いラッパーに留める
-- `backend/test/pipeline-integration-test.js` で旧実装との比較ログを取得し、`progress-log.md` に記録
+- `/api/check` と `/api/check-pipeline` を diff し、差分ゼロであることを `progress-log.md` にログ化
+- 下記チェックに **すべて合格** するまで Step A を完了としない：
+  1. Lighthouse が WebSocket 接続成功ログを出し、フォールバック値を返していない
+  2. `GeminiService.analyzeWebsite` が成功し、semanticAnalysis にモデル名・スコア等が埋まる
+  3. axe-core の違反件数が旧 API と一致
+  4. siteLinks / consoleErrors が旧 API と同等（0 件でも取得処理の証跡あり）
 
 ### Step B: `/api/check` 切り替え
 - `routes/check.js` は当面 `checkSinglePage` を呼び出し、互換性が確認できた段階でパイプラインを直接利用

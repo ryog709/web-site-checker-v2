@@ -131,18 +131,18 @@ frontend/src/
 **目標**: `checker.js` の責務を Analyzer / Pipeline / BrowserPool に移譲しつつ、既存 API レスポンスと同値を維持する。
 
 **完了条件 (DONE)**
-- [ ] `/api/check` が `AnalysisPipeline` を経由し、レスポンス構造（scores, issues, siteLinks, semanticAnalysis, consoleErrors）が旧実装と一致する
-- [ ] `auth` 付きサイト・CORS 前提のケースで従来と同じ挙動を確認（curl テンプレートを残す）
-- [ ] DOM / Lighthouse / Axe / Gemini の各結果が欠落なくマッピングされ、差分比較テストで同値性確認済み
-- [ ] `collectSiteLinks`・`console error` 収集など旧checker.jsの副作用が pipeline 側に移植されている
-- [ ] `backend/test/pipeline-integration-test.js` で旧APIとの比較ログを取得し、ドキュメントに記録
+- [ ] `/api/check` と `/api/check-pipeline` のレスポンス差分がゼロ（scores / issues / semanticAnalysis / siteLinks / consoleErrors / auth）である
+- [ ] `auth` 付きサイト・CORS 前提のケースで従来と同じ挙動を curl で確認し、`docs/progress-log.md` に実行結果を記録済み
+- [ ] DOM / Lighthouse / Axe / Gemini の各結果が旧実装と同値である（fallback スコアや空配列になっていない）
+- [ ] `collectSiteLinks`・`collectConsoleErrors` が pipeline で機能し、0 件でも証跡を残している
+- [ ] `docs/progress-log.md` に比較ログ・実行日時・検証コマンドを記録し、レビュー前にチェックリストを満たしたことを明示
 
 **タスクブレークダウン**
-- [ ] `AnalysisPipeline` に `auth` ハンドリング・リンク/console収集を実装
-- [ ] DOM/Lighthouse/Axe 結果を旧レスポンス形式へ変換する `legacyResultMapper`（新規モジュール）を作成
-- [ ] `checker.js` を薄いラッパー化（互換層のみ保持）し、`routes/check.js` はまず旧関数を利用
-- [ ] 段階的に `/api/check` → `/api/crawl` → `/api/count-pages` を新パイプラインへ切り替える移行計画を記録
-- [ ] 進捗・比較結果を `docs/progress-log.md` に追記
+- [ ] `AnalysisPipeline` に `auth` ハンドリング・リンク/console収集・Gemini呼び出しを実装
+- [ ] DOM/Lighthouse/Axe 結果を旧レスポンス形式へ変換する `legacyResultMapper` を作成し、空値の場合のログを出力
+- [ ] `/api/check-pipeline` で比較テスト用エンドポイントを維持しつつ、切り替え前に `progress-log.md` へ diff 結果を記載
+- [ ] `/api/check` → `/api/crawl` → `/api/count-pages` の順で切り替える段階計画を明文化
+- [ ] チェックリスト達成を `docs/session-notes.md` と `docs/progress-log.md` に記録してから完了報告する
 
 **対象ファイル**
 ```
