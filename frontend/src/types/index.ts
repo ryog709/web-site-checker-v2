@@ -128,6 +128,12 @@ export interface Issue {
   timestamp?: string;
 }
 
+export interface AnalyzerError {
+  error: string;
+  errorCode?: string;
+  detail?: string;
+}
+
 export interface LighthouseIssue {
   id: string;
   title: string;
@@ -184,6 +190,68 @@ export interface ConsoleError {
   };
 }
 
+export interface LayoutOverflowElement {
+  selector: string;
+  overflow: number;
+  rect: {
+    left: number;
+    right: number;
+    width: number;
+    height: number;
+    top: number;
+  };
+  textSnippet?: string;
+}
+
+export interface LayoutViewportResult {
+  label: string;
+  width: number;
+  height: number;
+  checkedAt: string;
+  viewportWidth?: number;
+  documentWidth?: number;
+  horizontalOverflow?: number;
+  hasHorizontalOverflow?: boolean;
+  overflowElements?: LayoutOverflowElement[];
+  error?: string;
+}
+
+export interface LayoutAnalysisResult {
+  summary?: {
+    totalViewports: number;
+    overflowViewports: number;
+    hasOverflow: boolean;
+    checkedAt: string;
+  };
+  viewports: LayoutViewportResult[];
+  error?: string;
+  errorCode?: string;
+}
+
+export interface W3CValidationMessage {
+  type: string;
+  subType: string | null;
+  message: string;
+  extract: string;
+  lastLine: number | null;
+  lastColumn: number | null;
+  firstLine: number | null;
+  firstColumn: number | null;
+  hiliteStart: number | null;
+  hiliteLength: number | null;
+  index: number;
+}
+
+export interface W3CValidationResult {
+  checkedAt: string;
+  sourceType: 'url' | 'html';
+  errorCount: number;
+  warningCount: number;
+  messages: W3CValidationMessage[];
+  error?: string;
+  errorCode?: string;
+}
+
 export interface MetaInfo {
   type: string;
   name: string;
@@ -212,6 +280,10 @@ export interface Issues {
     axe: AxeViolation[];
   };
   consoleErrors: ConsoleError[]; // コンソールエラーを追加
+  layout?: LayoutAnalysisResult | AnalyzerError;
+  validation?: {
+    w3c?: W3CValidationResult | AnalyzerError;
+  };
 }
 
 export interface GeminiAnalysisResponse {

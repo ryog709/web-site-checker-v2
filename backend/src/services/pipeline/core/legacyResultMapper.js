@@ -161,6 +161,16 @@ export function mapIssuesBundle(pipelineResult) {
     consoleErrors: pipelineResult.browser?.consoleErrors || []
   };
 
+  if (pipelineResult.layout) {
+    issues.layout = pipelineResult.layout;
+  }
+
+  if (pipelineResult.validation?.w3c) {
+    issues.validation = {
+      w3c: pipelineResult.validation.w3c
+    };
+  }
+
   console.log('[legacyResultMapper] Issues bundle created', {
     headingsCount: issues.headings.length,
     imagesCount: issues.images.length,

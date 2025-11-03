@@ -7,6 +7,8 @@
  */
 
 import { mapPipelineResultToLegacy } from '../core/legacyResultMapper.js';
+import { analyzeLayout } from '../analyzers/layoutAnalyzer.js';
+import { analyzeW3C } from '../analyzers/w3cAnalyzer.js';
 
 /**
  * パイプライン実行
@@ -26,12 +28,14 @@ export async function run(url, auth = null) {
 
   try {
     // 各アナライザを並列実行（現在はスタブ）
-    const [lighthouse, dom, axe, gemini, browser] = await Promise.all([
+    const [lighthouse, dom, axe, gemini, browser, layout, w3cValidation] = await Promise.all([
       analyzeLighthouse(url).catch(err => ({ error: err.message, errorCode: 'LIGHTHOUSE_FAILED' })),
       analyzeDom(url).catch(err => ({ error: err.message, errorCode: 'DOM_FAILED' })),
       analyzeAxe(url).catch(err => ({ error: err.message, errorCode: 'AXE_FAILED' })),
       analyzeGemini(url).catch(err => ({ error: err.message, errorCode: 'GEMINI_FAILED' })),
-      analyzeBrowser(url).catch(err => ({ error: err.message, errorCode: 'BROWSER_FAILED' }))
+      analyzeBrowser(url).catch(err => ({ error: err.message, errorCode: 'BROWSER_FAILED' })),
+      analyzeLayout({ url, auth: context.auth }).catch(err => ({ error: err.message, errorCode: 'LAYOUT_FAILED' })),
+      analyzeW3C({ url, auth: context.auth }).catch(err => ({ error: err.message, errorCode: 'W3C_VALIDATION_FAILED' }))
     ]);
 
     // パイプライン結果統合
@@ -41,7 +45,11 @@ export async function run(url, auth = null) {
       dom,
       axe,
       gemini,
-      browser
+      browser,
+      layout,
+      validation: {
+        w3c: w3cValidation
+      }
     };
 
     console.log('[AnalysisPipeline] Analysis completed', {
@@ -49,7 +57,9 @@ export async function run(url, auth = null) {
       hasDom: !dom?.error,
       hasAxe: !axe?.error,
       hasGemini: !gemini?.error,
-      hasBrowser: !browser?.error
+      hasBrowser: !browser?.error,
+      hasLayout: !layout?.error,
+      hasW3C: !w3cValidation?.error
     });
 
     // 旧API形式に変換
