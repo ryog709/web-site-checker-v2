@@ -41,7 +41,7 @@ export interface SemanticAnalysis {
 
 export interface GeminiConfig {
   apiKey: string;
-  model: 'gemini-1.5-flash' | 'gemini-1.5-pro';
+  model: 'gemini-2.0-flash' | 'gemini-2.5-flash';
   maxTokens?: number;
   temperature?: number;
   enabled: boolean;

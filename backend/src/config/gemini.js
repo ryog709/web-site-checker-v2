@@ -71,7 +71,7 @@ export function validateGeminiConfig() {
   }
 
   // モデル名チェック
-  const supportedModels = ['gemini-1.5-flash', 'gemini-1.5-pro'];
+  const supportedModels = ['gemini-2.0-flash', 'gemini-2.5-flash'];
   if (!supportedModels.includes(config.model)) {
     warnings.push(`GEMINI_MODEL should be one of: ${supportedModels.join(', ')}`);
   }

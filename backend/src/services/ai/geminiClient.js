@@ -11,7 +11,7 @@ import fetch from 'node-fetch';
 export class GeminiClient {
   constructor(config) {
     this.apiKey = config.apiKey;
-    this.model = config.model || 'gemini-1.5-flash';
+    this.model = config.model || 'gemini-2.0-flash';
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
     this.timeout = config.timeout || 30000; // 30秒
     this.maxTokens = config.maxTokens || 4096;
