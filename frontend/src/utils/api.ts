@@ -1,4 +1,4 @@
-import type { CheckResult, CrawlResult, BasicAuth } from '../types/index.js';
+import type { CheckResult, CrawlResult, BasicAuth, ChatSession } from '../types/index.js';
 
 // Local development API URL
 const API_BASE_URL = 'http://localhost:4000/api';
@@ -114,5 +114,23 @@ export async function crawlSite(startUrl: string, urls?: string[], auth?: BasicA
   return makeRequest<CrawlResult>('/crawl', {
     method: 'POST',
     body: JSON.stringify({ startUrl, urls, auth }),
+  });
+}
+
+export async function createChatSession(checkResult: CheckResult): Promise<ChatSession> {
+  return makeRequest<ChatSession>('/chat/session', {
+    method: 'POST',
+    body: JSON.stringify({ checkResult })
+  });
+}
+
+export async function fetchChatSession(sessionId: string): Promise<ChatSession> {
+  return makeRequest<ChatSession>(`/chat/session/${sessionId}`);
+}
+
+export async function sendChatMessage(sessionId: string, message: string): Promise<ChatSession> {
+  return makeRequest<ChatSession>(`/chat/${sessionId}/messages`, {
+    method: 'POST',
+    body: JSON.stringify({ message })
   });
 }

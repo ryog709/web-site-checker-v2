@@ -8,6 +8,7 @@
 - 完了: legacyResultMapper 実装、AnalysisPipeline スタブ統合、`/api/check-pipeline` エンドポイント追加、スタブ差分検証ログ
 - 互換維持が必須なAPI: `/api/check`, `/api/crawl`, `/api/count-pages`
 - 重要制約: auth対応必須 / 既存レスポンス構造維持 / Lighthouse・axe・semanticAnalysis・siteLinks を旧APIと同値で返す
+- 新規: `/api/chat` ＋ フロントチャットUI初期実装（Gemini 2.x Flash）。診断1件ごとにセッション生成し履歴は同一チェック内のみ保持。
 
 ## 再実装計画（2025-09-25 21:30 Codex CLI提案）
 **実装順序**（リスク最小化・段階的検証）:

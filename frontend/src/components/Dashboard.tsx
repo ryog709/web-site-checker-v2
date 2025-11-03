@@ -7,6 +7,7 @@ import { TabContent } from './TabContent.js';
 import { PageIssuesList } from './PageIssuesList.js';
 import { SemanticAnalysisComponent } from './SemanticAnalysis.js';
 import { useRecommendationGenerator } from './RecommendationGenerator.js';
+import { ChatPanel } from './ChatPanel.js';
 import { Calendar, Clock, Globe } from 'lucide-react';
 
 interface DashboardProps {
@@ -230,6 +231,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, onCheckPage }) => 
             )}
 
             <div className="details-section">
+              {!isCrawlResult && (
+                <div className="chat-section">
+                  <ChatPanel checkResult={data} />
+                </div>
+              )}
+
               <TabNavigation
                 activeTab={activeTab}
                 onTabChange={setActiveTab}

@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import checkRoutes from './routes/check.js';
+import chatRoutes from './routes/chat.js';
 
 dotenv.config();
 
@@ -94,6 +95,7 @@ app.use((req, res, next) => {
 
 // ルート設定
 app.use('/api', checkRoutes);
+app.use('/api/chat', chatRoutes);
 
 // ヘルスチェック
 app.get('/health', (req, res) => {

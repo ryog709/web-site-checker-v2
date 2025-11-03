@@ -283,3 +283,41 @@ export interface CrawlRequest {
 }
 
 export type TabType = 'headings' | 'images' | 'image-issues' | 'links' | 'meta' | 'html-structure' | 'accessibility' | 'console-errors';
+
+export type ChatRole = 'user' | 'assistant';
+
+export interface ChatScoreRow {
+  metric: string;
+  score: number | null;
+  goal: number | null;
+  comment: string | null;
+}
+
+export interface ChatActionItem {
+  title: string;
+  description: string | null;
+  priority: 'high' | 'medium' | 'low' | string;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: ChatRole;
+  content: string;
+  createdAt: string;
+  metadata?: {
+    model?: string;
+    tokensUsed?: number;
+    generatedAt?: string;
+  } | null;
+  scoreTable?: ChatScoreRow[] | null;
+  actionItems?: ChatActionItem[] | null;
+  followUpQuestions?: string[] | null;
+}
+
+export interface ChatSession {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  checkResult: CheckResult;
+  messages: ChatMessage[];
+}
