@@ -318,6 +318,57 @@ export interface FormAnalysisResult {
   errorCode?: string;
 }
 
+export interface MetadataIssue {
+  type: string;
+  severity: 'error' | 'warning' | 'info';
+  message: string;
+  element?: string;
+}
+
+export interface MetadataTag {
+  property: string;
+  content: string;
+}
+
+export interface TwitterMetaTag {
+  name: string;
+  content: string;
+}
+
+export interface MetadataIcon {
+  rel: string;
+  href: string;
+  sizes: string;
+  type: string;
+}
+
+export interface MetadataJsonLd {
+  index: number;
+  type: string;
+  raw: string;
+  parsed: unknown;
+  error: string | null;
+}
+
+export interface MetadataAnalysisResult {
+  summary: {
+    hasDescription: boolean;
+    hasViewport: boolean;
+    ogTagCount: number;
+    twitterTagCount: number;
+    iconCount: number;
+    jsonLdCount: number;
+    checkedAt: string;
+  };
+  issues: MetadataIssue[];
+  ogTags: MetadataTag[];
+  twitterTags: TwitterMetaTag[];
+  icons: MetadataIcon[];
+  jsonLd: MetadataJsonLd[];
+  error?: string;
+  errorCode?: string;
+}
+
 export interface MetaInfo {
   type: string;
   name: string;
@@ -351,6 +402,7 @@ export interface Issues {
   validation?: {
     w3c?: W3CValidationResult | AnalyzerError;
   };
+  metadata?: MetadataAnalysisResult | AnalyzerError;
 }
 
 export interface GeminiAnalysisResponse {

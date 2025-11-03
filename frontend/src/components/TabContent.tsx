@@ -16,6 +16,12 @@ import type {
   FormControlDetail,
   FormSubmitButton,
   FormControlIssue,
+  MetadataAnalysisResult,
+  MetadataIssue,
+  MetadataTag,
+  TwitterMetaTag,
+  MetadataIcon,
+  MetadataJsonLd,
 } from '../types/index.js';
 import {
   ExternalLink,
@@ -157,19 +163,26 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
       | W3CValidationResult
       | AnalyzerError
       | undefined
-      | FormAnalysisResult,
+      | FormAnalysisResult
+      | MetadataAnalysisResult,
   ): value is AnalyzerError =>
     !!value &&
     typeof value === 'object' &&
     'error' in value &&
     !('viewports' in value) &&
     !('messages' in value) &&
-    !('forms' in value);
+    !('forms' in value) &&
+    !('jsonLd' in value);
 
   const isFormResult = (
     value: FormAnalysisResult | AnalyzerError | undefined,
   ): value is FormAnalysisResult =>
     !!value && typeof value === 'object' && 'forms' in value;
+
+  const isMetadataResult = (
+    value: MetadataAnalysisResult | AnalyzerError | undefined,
+  ): value is MetadataAnalysisResult =>
+    !!value && typeof value === 'object' && 'jsonLd' in value;
 
   // 検索キーワードをクリップボードにコピー（メモ化で最適化）
   const handleCopyKeyword = useCallback(async (keyword: string, event: React.MouseEvent) => {
@@ -1238,10 +1251,59 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
     );
   };
 
-  const renderMetaInfo = (metaIssues: Issue[], allMeta: MetaInfo[]) => {
+  const renderMetaInfo = (
+    metaIssues: Issue[],
+    allMeta: MetaInfo[],
+    metadataData: MetadataAnalysisResult | AnalyzerError | undefined,
+  ) => {
+    if (metadataData && isAnalyzerErrorResult(metadataData)) {
+      return (
+        <div className="meta-info-section">
+          <div className="no-issues">
+            <div className="error-state">
+              <Bug size={40} className="error-icon-large" />
+              <h3>メタ情報解析に失敗しました</h3>
+              <p>{metadataData.error}</p>
+              {metadataData.errorCode && <p className="error-code">エラーコード: {metadataData.errorCode}</p>}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const metadata = metadataData && isMetadataResult(metadataData) ? metadataData : null;
+
     return (
       <div className="meta-info-section">
-        {/* 問題がなく、メタ情報がある場合 */}
+        {metadata && (
+          <div className="meta-summary-grid">
+            <div className={`summary-card ${metadata.summary.hasDescription ? 'summary-card--success' : 'summary-card--warning'}`}>
+              <span className="summary-label">meta description</span>
+              <strong className="summary-value">{metadata.summary.hasDescription ? 'あり' : 'なし'}</strong>
+            </div>
+            <div className={`summary-card ${metadata.summary.hasViewport ? 'summary-card--success' : 'summary-card--warning'}`}>
+              <span className="summary-label">meta viewport</span>
+              <strong className="summary-value">{metadata.summary.hasViewport ? 'あり' : 'なし'}</strong>
+            </div>
+            <div className="summary-card">
+              <span className="summary-label">OGPタグ</span>
+              <strong className="summary-value">{metadata.summary.ogTagCount}</strong>
+            </div>
+            <div className="summary-card">
+              <span className="summary-label">Twitterカード</span>
+              <strong className="summary-value">{metadata.summary.twitterTagCount}</strong>
+            </div>
+            <div className="summary-card">
+              <span className="summary-label">アイコン</span>
+              <strong className="summary-value">{metadata.summary.iconCount}</strong>
+            </div>
+            <div className="summary-card">
+              <span className="summary-label">JSON-LD</span>
+              <strong className="summary-value">{metadata.summary.jsonLdCount}</strong>
+            </div>
+          </div>
+        )}
+
         {metaIssues.length === 0 && allMeta.length > 0 && (
           <div className="meta-success">
             <div className="success-message">
@@ -1251,7 +1313,6 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
           </div>
         )}
 
-        {/* メタ情報の詳細表示 */}
         {allMeta.length > 0 && (
           <div className="meta-details">
             <div className="section-header">
@@ -1260,7 +1321,7 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                 <h4>メタ情報の詳細</h4>
               </div>
             </div>
-            
+
             <div className="meta-grid">
               {allMeta.map((meta, index) => (
                 <div key={index} className="meta-item">
@@ -1280,13 +1341,96 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                       </span>
                     )}
                   </div>
-                  <div className="meta-content">
-                    {meta.content}
+                  <div className="meta-content">{meta.content}</div>
+                  {meta.property && <div className="meta-property">{meta.property}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {metadata && metadata.ogTags.length > 0 && (
+          <div className="meta-section">
+            <div className="section-header">
+              <div className="section-title">
+                <span role="img" aria-label="og">🌐</span>
+                <h4>OGPタグ</h4>
+              </div>
+            </div>
+            <div className="meta-tag-grid">
+              {metadata.ogTags.map((tag: MetadataTag, index: number) => (
+                <div key={index} className={`meta-tag-card ${tag.content ? '' : 'meta-tag-card--missing'}`}>
+                  <span className="meta-tag-label">{tag.property}</span>
+                  <span className="meta-tag-value">{tag.content || '未設定'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {metadata && metadata.twitterTags.length > 0 && (
+          <div className="meta-section">
+            <div className="section-header">
+              <div className="section-title">
+                <span role="img" aria-label="twitter">🐦</span>
+                <h4>Twitterカード</h4>
+              </div>
+            </div>
+            <div className="meta-tag-grid">
+              {metadata.twitterTags.map((tag: TwitterMetaTag, index: number) => (
+                <div key={index} className={`meta-tag-card ${tag.content ? '' : 'meta-tag-card--missing'}`}>
+                  <span className="meta-tag-label">{tag.name}</span>
+                  <span className="meta-tag-value">{tag.content || '未設定'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {metadata && metadata.icons.length > 0 && (
+          <div className="meta-section">
+            <div className="section-header">
+              <div className="section-title">
+                <span role="img" aria-label="icon">🖼️</span>
+                <h4>アイコン・ファビコン</h4>
+              </div>
+            </div>
+            <div className="icon-grid">
+              {metadata.icons.map((icon: MetadataIcon, index: number) => (
+                <div key={index} className="icon-card">
+                  <div className="icon-meta-line">
+                    <span className="icon-rel">{icon.rel}</span>
+                    {icon.sizes && <span className="icon-size">{icon.sizes}</span>}
                   </div>
-                  {meta.property && (
-                    <div className="meta-property">
-                      {meta.property}
-                    </div>
+                  <a href={icon.href} target="_blank" rel="noopener noreferrer" className="icon-link">
+                    {icon.href}
+                  </a>
+                  {icon.type && <span className="icon-type">{icon.type}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {metadata && metadata.jsonLd.length > 0 && (
+          <div className="meta-section">
+            <div className="section-header">
+              <div className="section-title">
+                <span role="img" aria-label="jsonld">🧠</span>
+                <h4>JSON-LD構造化データ</h4>
+              </div>
+            </div>
+            <div className="jsonld-grid">
+              {metadata.jsonLd.map((entry: MetadataJsonLd, index: number) => (
+                <div key={index} className={`jsonld-card ${entry.error ? 'jsonld-card--error' : ''}`}>
+                  <div className="jsonld-header">
+                    <span className="jsonld-type">{entry.type}</span>
+                    {entry.error && <span className="jsonld-error">エラーあり</span>}
+                  </div>
+                  {entry.error ? (
+                    <p className="jsonld-error-message">{entry.error}</p>
+                  ) : (
+                    <pre className="jsonld-content">{JSON.stringify(entry.parsed, null, 2)}</pre>
                   )}
                 </div>
               ))}
@@ -1294,7 +1438,41 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
           </div>
         )}
 
-        {/* 問題がある場合の表示 */}
+        {metadata && metadata.issues.length > 0 && (
+          <div className="meta-issues additional">
+            <div className="section-header">
+              <div className="section-title">
+                <AlertTriangle size={20} />
+                <h4>メタ情報の検出結果</h4>
+                <span className="count-badge error">{metadata.issues.length}</span>
+              </div>
+            </div>
+            <div className="issues-grid">
+              {metadata.issues.map((issue: MetadataIssue, index: number) => (
+                <div key={index} className="issue-card modern">
+                  <div className="issue-header">
+                    <div className="issue-icon">
+                      {issue.severity === 'error' && <AlertTriangle size={16} />}
+                      {issue.severity === 'warning' && <AlertCircle size={16} />}
+                      {issue.severity === 'info' && <Info size={16} />}
+                    </div>
+                    <div className="issue-title">
+                      <span className="issue-type">{issue.type}</span>
+                      {issue.element && <span className="issue-element">{issue.element}</span>}
+                    </div>
+                    <div className={`severity-badge ${issue.severity}`}>
+                      {issue.severity === 'error' && 'エラー'}
+                      {issue.severity === 'warning' && '警告'}
+                      {issue.severity === 'info' && '情報'}
+                    </div>
+                  </div>
+                  <div className="issue-message">{issue.message}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {metaIssues.length > 0 && (
           <div className="meta-issues">
             <div className="section-header">
@@ -1324,17 +1502,14 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                       {issue.severity === 'info' && '情報'}
                     </div>
                   </div>
-                  <div className="issue-message">
-                    {issue.message}
-                  </div>
+                  <div className="issue-message">{issue.message}</div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* 問題もメタ情報もない場合 */}
-        {metaIssues.length === 0 && allMeta.length === 0 && (
+        {metaIssues.length === 0 && allMeta.length === 0 && !metadata && (
           <div className="no-issues">
             <div className="success-state">
               <div className="success-icon">❓</div>
@@ -1649,7 +1824,11 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
       case 'links':
         return renderIssueTable(issues.links, 'リンク');
       case 'meta':
-        return renderMetaInfo(issues.meta, issues.allMeta || []);
+        return renderMetaInfo(
+          issues.meta,
+          issues.allMeta || [],
+          issues.metadata as MetadataAnalysisResult | AnalyzerError | undefined,
+        );
       case 'html-structure':
         return renderHtmlStructure(issues.htmlStructure || []);
       case 'accessibility':

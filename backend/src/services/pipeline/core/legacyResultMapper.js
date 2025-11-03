@@ -169,6 +169,10 @@ export function mapIssuesBundle(pipelineResult) {
     issues.forms = pipelineResult.forms;
   }
 
+  if (pipelineResult.metadata) {
+    issues.metadata = pipelineResult.metadata;
+  }
+
   if (pipelineResult.validation?.w3c) {
     issues.validation = {
       w3c: pipelineResult.validation.w3c
