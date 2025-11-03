@@ -6,7 +6,7 @@
  * @module AnalysisPipeline
  */
 
-import { mapPipelineResultToLegacy } from '../core/legacyResultMapper.js';
+import { checkSinglePage } from '../../checker.js';
 import { analyzeLayout } from '../analyzers/layoutAnalyzer.js';
 import { analyzeW3C } from '../analyzers/w3cAnalyzer.js';
 import { analyzeForms } from '../analyzers/formAnalyzer.js';
@@ -22,208 +22,36 @@ import { analyzeMetadata } from '../analyzers/metadataAnalyzer.js';
 export async function run(url, auth = null) {
   console.log('[AnalysisPipeline] Starting analysis pipeline', { url, hasAuth: !!auth });
 
-  // コンテキスト作成
-  const context = {
-    url,
-    auth: auth || null
-  };
-
   try {
-    // 各アナライザを並列実行（現在はスタブ）
-    const [lighthouse, dom, axe, gemini, browser, layout, w3cValidation, forms, metadata] = await Promise.all([
-      analyzeLighthouse(url).catch(err => ({ error: err.message, errorCode: 'LIGHTHOUSE_FAILED' })),
-      analyzeDom(url).catch(err => ({ error: err.message, errorCode: 'DOM_FAILED' })),
-      analyzeAxe(url).catch(err => ({ error: err.message, errorCode: 'AXE_FAILED' })),
-      analyzeGemini(url).catch(err => ({ error: err.message, errorCode: 'GEMINI_FAILED' })),
-      analyzeBrowser(url).catch(err => ({ error: err.message, errorCode: 'BROWSER_FAILED' })),
-      analyzeLayout({ url, auth: context.auth }).catch(err => ({ error: err.message, errorCode: 'LAYOUT_FAILED' })),
-      analyzeW3C({ url, auth: context.auth }).catch(err => ({ error: err.message, errorCode: 'W3C_VALIDATION_FAILED' })),
-      analyzeForms({ url, auth: context.auth }).catch(err => ({ error: err.message, errorCode: 'FORM_ANALYSIS_FAILED' })),
-      analyzeMetadata({ url, auth: context.auth }).catch(err => ({ error: err.message, errorCode: 'METADATA_ANALYSIS_FAILED' }))
+    const legacyResult = await checkSinglePage(url, auth);
+
+    const [layout, w3cValidation, forms, metadata] = await Promise.all([
+      analyzeLayout({ url, auth }).catch(err => ({ error: err.message, errorCode: 'LAYOUT_FAILED' })),
+      analyzeW3C({ url, auth }).catch(err => ({ error: err.message, errorCode: 'W3C_VALIDATION_FAILED' })),
+      analyzeForms({ url, auth }).catch(err => ({ error: err.message, errorCode: 'FORM_ANALYSIS_FAILED' })),
+      analyzeMetadata({ url, auth }).catch(err => ({ error: err.message, errorCode: 'METADATA_ANALYSIS_FAILED' })),
     ]);
 
-    // パイプライン結果統合
-    const pipelineResult = {
-      context,
-      lighthouse,
-      dom,
-      axe,
-      gemini,
-      browser,
-      layout,
-      forms,
-      metadata,
-      validation: {
-        w3c: w3cValidation
-      }
+    const issues = {
+      ...legacyResult.issues,
+      ...(layout ? { layout } : {}),
+      ...(forms ? { forms } : {}),
+      ...(metadata ? { metadata } : {}),
     };
 
-    console.log('[AnalysisPipeline] Analysis completed', {
-      hasLighthouse: !lighthouse?.error,
-      hasDom: !dom?.error,
-      hasAxe: !axe?.error,
-      hasGemini: !gemini?.error,
-      hasBrowser: !browser?.error,
-      hasLayout: !layout?.error,
-      hasW3C: !w3cValidation?.error,
-      hasForms: !forms?.error,
-      hasMetadata: !metadata?.error
-    });
+    if (w3cValidation) {
+      issues.validation = {
+        ...(legacyResult.issues?.validation ?? {}),
+        w3c: w3cValidation,
+      };
+    }
 
-    // 旧API形式に変換
-    return mapPipelineResultToLegacy(pipelineResult);
+    return {
+      ...legacyResult,
+      issues,
+    };
   } catch (error) {
     console.error('[AnalysisPipeline] Pipeline execution failed', error);
     throw error;
   }
-}
-
-/**
- * Lighthouse分析（スタブ）
- *
- * @param {string} url - 分析対象URL
- * @returns {Promise<Object>} Lighthouse分析結果
- */
-async function analyzeLighthouse(url) {
-  console.log('[AnalysisPipeline:Lighthouse] Stub analyzer called', { url });
-
-  // スタブ: Lighthouse categories 構造を返す
-  return {
-    categories: {
-      performance: { score: 0.85 },
-      accessibility: { score: 0.92 },
-      'best-practices': { score: 0.88 },
-      seo: { score: 0.95 }
-    },
-    accessibilityIssues: []
-  };
-}
-
-/**
- * DOM解析（スタブ）
- *
- * @param {string} url - 分析対象URL
- * @returns {Promise<Object>} DOM解析結果
- */
-async function analyzeDom(url) {
-  console.log('[AnalysisPipeline:DOM] Stub analyzer called', { url });
-
-  // スタブ: metrics + issues + links 構造を返す
-  return {
-    metrics: {
-      loadTimeMs: 1500,
-      hasTitle: true,
-      hasDescription: true,
-      hasH1: true,
-      imagesWithoutAlt: 2,
-      totalImages: 10,
-      resourceCount: 35
-    },
-    headingIssues: [],
-    headingStructure: [
-      { level: 1, text: 'Example Heading', position: 0 }
-    ],
-    imageIssues: [
-      {
-        type: 'missing-alt',
-        src: 'https://example.com/image1.jpg',
-        message: 'Image missing alt attribute'
-      }
-    ],
-    imageDetails: [
-      {
-        src: 'https://example.com/image1.jpg',
-        alt: '',
-        width: 800,
-        height: 600,
-        position: 'top'
-      }
-    ],
-    linkIssues: [],
-    links: [
-      {
-        url,
-        text: 'Home',
-        title: 'Homepage'
-      }
-    ],
-    metaIssues: [],
-    metaDetails: [
-      { name: 'description', content: 'Example description' }
-    ],
-    htmlStructureIssues: []
-  };
-}
-
-/**
- * axe-core分析（スタブ）
- *
- * @param {string} url - 分析対象URL
- * @returns {Promise<Object>} axe-core分析結果
- */
-async function analyzeAxe(url) {
-  console.log('[AnalysisPipeline:Axe] Stub analyzer called', { url });
-
-  // スタブ: violations 構造を返す
-  return {
-    violations: [
-      {
-        id: 'color-contrast',
-        impact: 'serious',
-        description: 'Elements must have sufficient color contrast',
-        nodes: [
-          {
-            html: '<button>Click me</button>',
-            target: ['button'],
-            failureSummary: 'Fix any of the following:\n  Element has insufficient color contrast'
-          }
-        ]
-      }
-    ]
-  };
-}
-
-/**
- * Gemini分析（スタブ）
- *
- * @param {string} url - 分析対象URL
- * @returns {Promise<Object>} Gemini分析結果
- */
-async function analyzeGemini(url) {
-  console.log('[AnalysisPipeline:Gemini] Stub analyzer called', { url });
-
-  // スタブ: geminiAnalysis + メタデータ構造を返す
-  return {
-    geminiAnalysis: {
-      contentQuality: {
-        score: 85,
-        improvements: ['Consider adding more detailed headings'],
-        details: 'Overall content quality is good'
-      }
-    },
-    processingTime: 250,
-    cached: false
-  };
-}
-
-/**
- * Browser分析（スタブ）
- *
- * @param {string} url - 分析対象URL
- * @returns {Promise<Object>} Browser分析結果
- */
-async function analyzeBrowser(url) {
-  console.log('[AnalysisPipeline:Browser] Stub analyzer called', { url });
-
-  // スタブ: consoleErrors 構造を返す
-  return {
-    consoleErrors: [
-      {
-        type: 'console',
-        level: 'error',
-        message: 'Example console error',
-        timestamp: new Date().toISOString()
-      }
-    ]
-  };
 }

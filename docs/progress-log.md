@@ -11,6 +11,7 @@
 | 2025-09-26 22:10 | ⚠️ 進行中 | Phase 2.1 Step A スタブ骨格整備 | calculateBasicScoresFromDom 実装、AnalysisPipeline/index.js 作成、/api/check-pipeline エンドポイント追加（実アナライザ未実装） |
 | 2025-09-27 14:15 | ⚙️ 実装中 | チャットQAセッション初期実装（/api/chat, Gemini 2.x Flash, フロントUI） | frontend `npm run build` / 手動API確認（create session → send message） |
 | 2025-11-03 10:15 | ⚙️ 進行中 | Phase 2.1 Step A 実装完了（layout/w3c/form/metadata 含むパイプライン + UI タブ追加） | `npm run build`（frontend） / `cd backend && npm run lint` |
+| 2025-11-03 10:45 | 📊 検証中 | `/api/check` vs `/api/check-pipeline` 差分スクリプト追加＆初回比較 | `node backend/scripts/compare-checks.mjs https://example.com` → 差分は新機能セクションのみ（layout/forms/metadata/w3c） |
 
 ### Step A 中間検証（スタブ段階, 2025-09-26 22:10）
 
