@@ -4,9 +4,11 @@ import AxePuppeteer from '@axe-core/puppeteer';
 import * as cheerio from 'cheerio';
 import os from 'os';
 import fs from 'fs';
-import { resolveAbsoluteUrl, isValidUrl, isHttpUrl, filterSameDomainLinks, filterWordPressUrls, containsJapanese, normalizeUrl, deduplicateUrls, filterCrawlableUrls } from '../utils/url-utils.js';
+import { resolveAbsoluteUrl } from '../utils/url-utils.js';
 import { GeminiService } from './ai/geminiService.js';
 import { getGeminiConfig, isGeminiConfigValid } from '../config/gemini.js';
+
+/* global document, window */
 
 // Geminiサービスインスタンス（遅延初期化）
 let geminiService = null;
@@ -233,11 +235,11 @@ export async function checkSinglePage(url, auth = null) {
                     lighthouse: lighthouseResults.accessibility,
                     axe: axeResults
                 },
-                consoleErrors: consoleErrors
+                consoleErrors
             },
             siteLinks, // 他ページへのリンク一覧を追加
             semanticAnalysis, // Gemini AI分析結果を追加
-            auth: auth // 認証情報を結果に含める
+            auth // 認証情報を結果に含める
         };
     } finally {
         await browser.close();
@@ -279,7 +281,7 @@ export async function crawlSite(startUrl, urls = null, auth = null) {
         totalPages: results.length,
         timestamp: new Date().toISOString(),
         results,
-        auth: auth // 認証情報を結果に含める
+        auth // 認証情報を結果に含める
     };
 }
 
@@ -341,7 +343,7 @@ async function runLighthouse(url, auth = null, browser = null) {
                     })
                 }
             }, {
-                port: port
+                port
             });
 
             // スコアを0-100スケールに変換
@@ -533,8 +535,8 @@ function getAllHeadings($) {
 
             images.push({
                 src: absoluteSrc,
-                alt: alt,
-                title: title,
+                alt,
+                title,
                 width: width ? parseInt(width) : null,
                 height: height ? parseInt(height) : null,
                 filename: src ? src.split('/').pop().split('.')[0] : ''
@@ -554,7 +556,7 @@ function getAllHeadings($) {
             tag: heading.tagName.toLowerCase(),
             text: text || '',
             index,
-            images: images,
+            images,
             hasImage: images.length > 0,
             isEmpty: !text && images.length === 0
         };
@@ -644,7 +646,7 @@ async function getAllImages($, page = null) {
                     const absoluteTop = rect.top + scrollY;
                     
                     return {
-                        index: index,
+                        index,
                         src: img.src,
                         top: absoluteTop,
                         left: rect.left,
@@ -689,7 +691,7 @@ async function getAllImages($, page = null) {
                 if (srcset) {
                     hasWebPAlternative = true;
                     webpSources.push({
-                        srcset: srcset,
+                        srcset,
                         media: $source.attr('media') || '',
                         sizes: $source.attr('sizes') || ''
                     });
@@ -713,13 +715,13 @@ async function getAllImages($, page = null) {
             hasAlt: !!alt,
             hasDimensions: !!(width && height),
             filename: src ? src.split('/').pop() : 'unknown',
-            isInHeader: isInHeader,
-            isInNav: isInNav,
-            isInFooter: isInFooter,
+            isInHeader,
+            isInNav,
+            isInFooter,
             location: isInHeader ? 'header' : isInNav ? 'nav' : isInFooter ? 'footer' : 'content',
             isInPicture: pictureParent.length > 0,
-            hasWebPAlternative: hasWebPAlternative,
-            webpSources: webpSources,
+            hasWebPAlternative,
+            webpSources,
             loading: $img.attr('loading') || null, // loading属性の値を取得
             hasLazyLoading: $img.attr('loading') === 'lazy', // lazy loading設定済みかどうか
             // 位置情報を追加
@@ -758,7 +760,7 @@ async function getAllImages($, page = null) {
             hasDimensions: !!(width && height),
             filename: 'inline-svg',
             type: 'svg',
-            role: role,
+            role,
             
             // ページ内での位置
             isInHeader: $svg.closest('header').length > 0,
@@ -887,13 +889,13 @@ async function analyzeImages($) {
                 message: 'SVGにアクセシブルな説明が設定されていません。装飾目的なら role="presentation" を追加してください。',
                 severity: 'warning',
                 details: {
-                    role: role,
-                    ariaLabel: ariaLabel,
-                    ariaLabelledby: ariaLabelledby,
+                    role,
+                    ariaLabel,
+                    ariaLabelledby,
                     ariaHidden,
                     hasTitle: titleText.length > 0,
                     class: classAttr,
-                    id: id,
+                    id,
                     suggestion: '装飾目的なら <svg role="presentation" ...> または aria-hidden="true" を追加。意味があるSVGなら aria-label や <title> を追加。'
                 }
             });
@@ -924,7 +926,7 @@ function analyzeLinks($) {
             issues.push({
                 type: 'リンクテキストなし',
                 element: 'a',
-                href: href,
+                href,
                 linkText: text || '（テキストなし）',
                 linkHtml: html || '',
                 message: 'リンクにアクセス可能なテキストがありません',
@@ -937,7 +939,7 @@ function analyzeLinks($) {
             issues.push({
                 type: 'セキュリティ不備',
                 element: 'a',
-                href: href,
+                href,
                 linkText: text || '（テキストなし）',
                 linkHtml: html || '',
                 message: '外部リンクにrel="noopener"が設定されていません',
@@ -1701,20 +1703,20 @@ function checkUnclosedTags(htmlContent, issues) {
                 issues.push({
                     type: '閉じタグエラー',
                     element: tagName,
-                    className: className,
+                    className,
                     message: `</${tagName}> に対応する開始タグが見つかりません`,
                     severity: 'error',
-                    position: position
+                    position
                 });
             }
         } else {
             stack.push({
                 name: tagName,
-                position: position
+                position
             });
             tagPositions.push({
                 name: tagName,
-                position: position,
+                position,
                 type: 'open'
             });
         }
@@ -1726,7 +1728,7 @@ function checkUnclosedTags(htmlContent, issues) {
         issues.push({
             type: '未閉じタグ',
             element: tag.name,
-            className: className,
+            className,
             message: `<${tag.name}> タグが閉じられていません`,
             severity: 'error',
             position: tag.position,
@@ -1785,7 +1787,7 @@ function checkNestingIssues(htmlContent, issues) {
                 issues.push({
                     type: '不正なネスト',
                     element: `${parentMatch[1]} > ${rule.child}`,
-                    className: className,
+                    className,
                     message: rule.message,
                     severity: 'error',
                     position: parentMatch.index
