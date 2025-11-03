@@ -8,6 +8,7 @@ const DEFAULT_LAUNCH_ARGS = [
   '--disable-setuid-sandbox',
   '--disable-dev-shm-usage',
   '--enable-chrome-browser-cloud-management',
+  '--remote-debugging-port=0',
 ];
 
 const DEFAULT_GOTO_OPTIONS = {

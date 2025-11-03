@@ -93,13 +93,14 @@ function getBrowserConfig() {
             '--disable-gpu',
             '--disable-background-timer-throttling',
             '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding',
-            '--disable-features=TranslateUI',
-            '--disable-ipc-flooding-protection',
-            '--enable-chrome-browser-cloud-management',
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor'
-        ]
+        '--disable-renderer-backgrounding',
+        '--disable-features=TranslateUI',
+        '--disable-ipc-flooding-protection',
+        '--enable-chrome-browser-cloud-management',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor',
+        '--remote-debugging-port=0'
+    ]
     };
     
     // Chrome実行ファイルが見つかった場合のみパスを指定
@@ -298,6 +299,7 @@ async function runLighthouse(url, auth = null, browser = null) {
         if (browser) {
             // WebSocket URLが利用可能かチェック
             const endpoint = browser.wsEndpoint();
+            console.log('Lighthouse wsEndpoint:', endpoint);
             if (!endpoint) {
                 console.warn('Browser WebSocket endpoint not available, falling back to basic scores');
                 return await calculateBasicScores(url, browser);
@@ -305,6 +307,7 @@ async function runLighthouse(url, auth = null, browser = null) {
 
             // URLからポート番号を抽出
             const wsUrl = new URL(endpoint);
+            console.log('Lighthouse resolved host/port:', wsUrl.hostname, wsUrl.port);
             const port = parseInt(wsUrl.port);
 
             if (!port || isNaN(port)) {
@@ -312,11 +315,23 @@ async function runLighthouse(url, auth = null, browser = null) {
                 return await calculateBasicScores(url, browser);
             }
 
-            const {
-                lhr
-            } = await lighthouse(url, {
-                onlyCategories: ['performance', 'accessibility', 'best-practices', 'seo'],
+            const flags = {
+                port,
+                hostname: wsUrl.hostname,
+                logLevel: 'silent',
+                output: 'json',
+                // ベーシック認証が必要な場合
+                ...(auth && auth.username && auth.password && {
+                    extraHeaders: {
+                        'Authorization': `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`
+                    }
+                })
+            };
+
+            const config = {
+                extends: 'lighthouse:default',
                 settings: {
+                    onlyCategories: ['performance', 'accessibility', 'best-practices', 'seo'],
                     maxWaitForFcp: 15 * 1000,
                     maxWaitForLoad: 35 * 1000,
                     formFactor: 'desktop',
@@ -334,17 +349,11 @@ async function runLighthouse(url, auth = null, browser = null) {
                         height: 940,
                         deviceScaleFactor: 1,
                         disabled: false,
-                    },
-                    // ベーシック認証が必要な場合
-                    ...(auth && auth.username && auth.password && {
-                        extraHeaders: {
-                            'Authorization': `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`
-                        }
-                    })
+                    }
                 }
-            }, {
-                port
-            });
+            };
+
+            const { lhr } = await lighthouse(url, flags, config);
 
             // スコアを0-100スケールに変換
             const scores = {
