@@ -278,7 +278,9 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                 <div className="image-attributes">
                   <div className="attribute-row">
                     <span className="attribute-label">Alt:</span>
-                    {image.hasAlt ? (
+                    {image.type === 'svg' ? (
+                      <span className="attribute-value alt-inline">SVGは`&lt;title&gt;`や`aria-label`で説明します</span>
+                    ) : image.hasAlt ? (
                       <span className="attribute-value alt-present">"{image.alt || ''}"</span>
                     ) : (
                       <span className="attribute-value alt-missing">⚠️ なし</span>

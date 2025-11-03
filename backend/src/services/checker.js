@@ -864,15 +864,20 @@ async function analyzeImages($) {
     $('svg').each((_, svg) => {
         const $svg = $(svg);
         const role = $svg.attr('role');
-        const ariaLabel = $svg.attr('aria-label');
-        const ariaLabelledby = $svg.attr('aria-labelledby');
-        const title = $svg.find('title').text();
+        const ariaLabel = ($svg.attr('aria-label') || '').trim();
+        const ariaLabelledby = ($svg.attr('aria-labelledby') || '').trim();
+        const ariaHidden = ($svg.attr('aria-hidden') || '').trim();
+        const titleText = ($svg.find('title').first().text() || '').trim();
 
-        // SVGには以下のいずれかが必要：
-        // 1. role="img" + aria-label または title
-        // 2. role="presentation" (装飾的な場合)
-        // 3. aria-labelledby で説明要素を参照
-        if (role !== 'img' && role !== 'presentation' && !ariaLabel && !ariaLabelledby && !title) {
+        const isDecorative = role === 'presentation'
+            || role === 'none'
+            || ariaHidden === 'true';
+
+        const hasAccessibleName = ariaLabel.length > 0
+            || ariaLabelledby.length > 0
+            || titleText.length > 0;
+
+        if (!isDecorative && !hasAccessibleName) {
             const classAttr = $svg.attr('class');
             const id = $svg.attr('id');
 
@@ -885,10 +890,11 @@ async function analyzeImages($) {
                     role: role,
                     ariaLabel: ariaLabel,
                     ariaLabelledby: ariaLabelledby,
-                    hasTitle: !!title,
+                    ariaHidden,
+                    hasTitle: titleText.length > 0,
                     class: classAttr,
                     id: id,
-                    suggestion: '装飾目的なら <svg role="presentation" ...> を追加。意味があるSVGなら aria-label または <title> を追加。'
+                    suggestion: '装飾目的なら <svg role="presentation" ...> または aria-hidden="true" を追加。意味があるSVGなら aria-label や <title> を追加。'
                 }
             });
         }
