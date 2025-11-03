@@ -9,6 +9,7 @@
 import { mapPipelineResultToLegacy } from '../core/legacyResultMapper.js';
 import { analyzeLayout } from '../analyzers/layoutAnalyzer.js';
 import { analyzeW3C } from '../analyzers/w3cAnalyzer.js';
+import { analyzeForms } from '../analyzers/formAnalyzer.js';
 
 /**
  * パイプライン実行
@@ -28,14 +29,15 @@ export async function run(url, auth = null) {
 
   try {
     // 各アナライザを並列実行（現在はスタブ）
-    const [lighthouse, dom, axe, gemini, browser, layout, w3cValidation] = await Promise.all([
+    const [lighthouse, dom, axe, gemini, browser, layout, w3cValidation, forms] = await Promise.all([
       analyzeLighthouse(url).catch(err => ({ error: err.message, errorCode: 'LIGHTHOUSE_FAILED' })),
       analyzeDom(url).catch(err => ({ error: err.message, errorCode: 'DOM_FAILED' })),
       analyzeAxe(url).catch(err => ({ error: err.message, errorCode: 'AXE_FAILED' })),
       analyzeGemini(url).catch(err => ({ error: err.message, errorCode: 'GEMINI_FAILED' })),
       analyzeBrowser(url).catch(err => ({ error: err.message, errorCode: 'BROWSER_FAILED' })),
       analyzeLayout({ url, auth: context.auth }).catch(err => ({ error: err.message, errorCode: 'LAYOUT_FAILED' })),
-      analyzeW3C({ url, auth: context.auth }).catch(err => ({ error: err.message, errorCode: 'W3C_VALIDATION_FAILED' }))
+      analyzeW3C({ url, auth: context.auth }).catch(err => ({ error: err.message, errorCode: 'W3C_VALIDATION_FAILED' })),
+      analyzeForms({ url, auth: context.auth }).catch(err => ({ error: err.message, errorCode: 'FORM_ANALYSIS_FAILED' }))
     ]);
 
     // パイプライン結果統合
@@ -47,6 +49,7 @@ export async function run(url, auth = null) {
       gemini,
       browser,
       layout,
+      forms,
       validation: {
         w3c: w3cValidation
       }
@@ -59,7 +62,8 @@ export async function run(url, auth = null) {
       hasGemini: !gemini?.error,
       hasBrowser: !browser?.error,
       hasLayout: !layout?.error,
-      hasW3C: !w3cValidation?.error
+      hasW3C: !w3cValidation?.error,
+      hasForms: !forms?.error
     });
 
     // 旧API形式に変換

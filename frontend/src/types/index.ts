@@ -252,6 +252,72 @@ export interface W3CValidationResult {
   errorCode?: string;
 }
 
+export interface FormControlIssue {
+  type: string;
+  severity: 'error' | 'warning' | 'info';
+  message: string;
+}
+
+export interface FormControlDetail {
+  index: number;
+  selector: string;
+  tagName: string;
+  type: string;
+  name: string;
+  id?: string;
+  labels: string[];
+  hasLabel: boolean;
+  ariaLabel: string;
+  ariaLabelledby: string;
+  describedBy: string;
+  placeholder: string;
+  required: boolean;
+  autocomplete?: string;
+  issues: FormControlIssue[];
+}
+
+export interface FormSubmitButton {
+  selector: string;
+  text: string;
+  type: string;
+}
+
+export interface FormSummary {
+  totalControls: number;
+  controlsMissingLabel: number;
+  controlsMissingName: number;
+  hasSubmitButton: boolean;
+}
+
+export interface FormAnalysisForm {
+  index: number;
+  selector: string;
+  id: string;
+  name: string;
+  method: string;
+  action: string;
+  autocomplete?: string;
+  novalidate: boolean;
+  controls: FormControlDetail[];
+  submitButtons: FormSubmitButton[];
+  issues: FormControlIssue[];
+  summary: FormSummary;
+}
+
+export interface FormAnalysisResult {
+  summary: {
+    totalForms: number;
+    formsWithIssues: number;
+    totalControls: number;
+    controlsMissingLabel: number;
+    controlsMissingName: number;
+    checkedAt: string;
+  };
+  forms: FormAnalysisForm[];
+  error?: string;
+  errorCode?: string;
+}
+
 export interface MetaInfo {
   type: string;
   name: string;
@@ -281,6 +347,7 @@ export interface Issues {
   };
   consoleErrors: ConsoleError[]; // コンソールエラーを追加
   layout?: LayoutAnalysisResult | AnalyzerError;
+  forms?: FormAnalysisResult | AnalyzerError;
   validation?: {
     w3c?: W3CValidationResult | AnalyzerError;
   };
@@ -364,6 +431,7 @@ export type TabType =
   | 'accessibility'
   | 'console-errors'
   | 'layout'
+  | 'forms'
   | 'validation';
 
 export type ChatRole = 'user' | 'assistant';

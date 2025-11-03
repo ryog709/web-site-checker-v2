@@ -165,6 +165,10 @@ export function mapIssuesBundle(pipelineResult) {
     issues.layout = pipelineResult.layout;
   }
 
+  if (pipelineResult.forms) {
+    issues.forms = pipelineResult.forms;
+  }
+
   if (pipelineResult.validation?.w3c) {
     issues.validation = {
       w3c: pipelineResult.validation.w3c

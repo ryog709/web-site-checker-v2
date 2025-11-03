@@ -11,6 +11,11 @@ import type {
   LayoutAnalysisResult,
   AnalyzerError,
   W3CValidationResult,
+  FormAnalysisResult,
+  FormAnalysisForm,
+  FormControlDetail,
+  FormSubmitButton,
+  FormControlIssue,
 } from '../types/index.js';
 import {
   ExternalLink,
@@ -28,6 +33,7 @@ import {
   MonitorSmartphone,
   FileCode2,
   Bug,
+  ClipboardList,
 } from 'lucide-react';
 import { Modal } from './Modal.js';
 import { getAxeTranslation, translateImpact, translateWcagTag } from '../constants/axeTranslations.js';
@@ -145,12 +151,25 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
 }) => {
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
-  const isAnalyzerErrorResult = (value: LayoutAnalysisResult | W3CValidationResult | AnalyzerError | undefined): value is AnalyzerError =>
+  const isAnalyzerErrorResult = (
+    value:
+      | LayoutAnalysisResult
+      | W3CValidationResult
+      | AnalyzerError
+      | undefined
+      | FormAnalysisResult,
+  ): value is AnalyzerError =>
     !!value &&
     typeof value === 'object' &&
     'error' in value &&
     !('viewports' in value) &&
-    !('messages' in value);
+    !('messages' in value) &&
+    !('forms' in value);
+
+  const isFormResult = (
+    value: FormAnalysisResult | AnalyzerError | undefined,
+  ): value is FormAnalysisResult =>
+    !!value && typeof value === 'object' && 'forms' in value;
 
   // 検索キーワードをクリップボードにコピー（メモ化で最適化）
   const handleCopyKeyword = useCallback(async (keyword: string, event: React.MouseEvent) => {
@@ -534,6 +553,243 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                   {message.subType && (
                     <div className="validation-subtype">種別: {message.subType}</div>
                   )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderFormsAnalysis = (formsData: FormAnalysisResult | AnalyzerError | undefined) => {
+    if (!formsData) {
+      return (
+        <div className="no-issues">
+          <div className="success-state">
+            <div className="success-icon">ℹ️</div>
+            <h3>フォーム解析は未実行です</h3>
+            <p>診断を再実行してフォーム情報を取得してください。</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (isAnalyzerErrorResult(formsData)) {
+      return (
+        <div className="no-issues">
+          <div className="error-state">
+            <Bug size={40} className="error-icon-large" />
+            <h3>フォーム解析に失敗しました</h3>
+            <p>{formsData.error}</p>
+            {formsData.errorCode && <p className="error-code">エラーコード: {formsData.errorCode}</p>}
+          </div>
+        </div>
+      );
+    }
+
+    if (!isFormResult(formsData)) {
+      return null;
+    }
+
+    const { summary, forms } = formsData;
+
+    const formatDateTime = (isoString: string | undefined) => {
+      if (!isoString) return '-';
+      try {
+        return new Date(isoString).toLocaleString('ja-JP');
+      } catch {
+        return isoString;
+      }
+    };
+
+    return (
+      <div className="form-analysis-section">
+        <div className="section-header">
+          <div className="section-title">
+            <ClipboardList size={20} />
+            <h4>フォーム診断</h4>
+          </div>
+          <p className="section-description">
+            ラベル関連付けや送信ボタン、バリデーション属性など、フォームの実装品質をチェックします。
+          </p>
+        </div>
+
+        <div className="form-summary-grid">
+          <div className="summary-card">
+            <span className="summary-label">総フォーム数</span>
+            <strong className="summary-value">{summary.totalForms}</strong>
+          </div>
+          <div className={`summary-card ${summary.formsWithIssues > 0 ? 'summary-card--warning' : 'summary-card--success'}`}>
+            <span className="summary-label">問題ありフォーム</span>
+            <strong className="summary-value">{summary.formsWithIssues}</strong>
+            <span className={`status-pill ${summary.formsWithIssues > 0 ? 'status-pill--warning' : 'status-pill--success'}`}>
+              {summary.formsWithIssues > 0 ? '要確認あり' : '問題なし'}
+            </span>
+          </div>
+          <div className="summary-card">
+            <span className="summary-label">入力フィールド数</span>
+            <strong className="summary-value">{summary.totalControls}</strong>
+          </div>
+          <div className="summary-card summary-card--warning">
+            <span className="summary-label">ラベル欠如フィールド</span>
+            <strong className="summary-value">{summary.controlsMissingLabel}</strong>
+          </div>
+          <div className="summary-card summary-card--warning">
+            <span className="summary-label">name未設定フィールド</span>
+            <strong className="summary-value">{summary.controlsMissingName}</strong>
+          </div>
+          <div className="summary-card">
+            <span className="summary-label">最終チェック</span>
+            <strong className="summary-value">{formatDateTime(summary.checkedAt)}</strong>
+          </div>
+        </div>
+
+        {forms.length === 0 ? (
+          <div className="no-issues">
+            <div className="success-state">
+              <div className="success-icon">ℹ️</div>
+              <h3>フォームは見つかりませんでした</h3>
+              <p>このページにはフォーム要素が存在しないようです。</p>
+            </div>
+          </div>
+        ) : (
+          <div className="forms-grid">
+            {forms.map((form: FormAnalysisForm, index: number) => {
+              const controlsWithIssues = form.controls.filter((control: FormControlDetail) => control.issues.length > 0);
+              return (
+                <div
+                  key={index}
+                  className={`form-card ${
+                    form.issues.length > 0 || controlsWithIssues.length > 0
+                      ? 'form-card--warning'
+                      : 'form-card--ok'
+                  }`}
+                >
+                  <div className="form-card-header">
+                    <ClipboardList size={18} />
+                    <div className="form-card-meta">
+                      <h5>
+                        フォーム #{form.index + 1}{' '}
+                        <span className="form-method">[{form.method}]</span>
+                      </h5>
+                      <span className="form-action">
+                        action: {form.action || '(action未指定)'}
+                      </span>
+                    </div>
+                    <span
+                      className={`status-pill ${
+                        form.summary.controlsMissingLabel > 0 || form.issues.length > 0
+                          ? 'status-pill--warning'
+                          : 'status-pill--success'
+                      }`}
+                    >
+                      {form.summary.controlsMissingLabel > 0 || form.issues.length > 0
+                        ? '改善が必要'
+                        : '良好'}
+                    </span>
+                  </div>
+
+                  <div className="form-metrics">
+                    <div>
+                      <span className="metric-label">フィールド数</span>
+                      <span className="metric-value">{form.summary.totalControls}</span>
+                    </div>
+                    <div>
+                      <span className="metric-label">ラベル欠如</span>
+                      <span className="metric-value">{form.summary.controlsMissingLabel}</span>
+                    </div>
+                    <div>
+                      <span className="metric-label">name未設定</span>
+                      <span className="metric-value">{form.summary.controlsMissingName}</span>
+                    </div>
+                  </div>
+
+                  {form.issues.length > 0 && (
+                    <div className="form-issues-block">
+                      <h6>フォームの問題</h6>
+                      <ul className="form-issues-list">
+                        {form.issues.map((issue: FormControlIssue, issueIndex: number) => (
+                          <li key={issueIndex} className={`issue-item severity-${issue.severity}`}>
+                            <span className="issue-type">{issue.type}</span>
+                            <span className="issue-message">{issue.message}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <div className="form-controls-block">
+                    <h6>入力フィールド</h6>
+                    {form.controls.length === 0 ? (
+                      <p className="form-empty-message">入力フィールドが存在しません。</p>
+                    ) : (
+                      <div className="form-controls-list">
+                        {form.controls.map((control: FormControlDetail, controlIndex: number) => (
+                          <div
+                            key={controlIndex}
+                            className={`form-control-card ${
+                              control.issues.length > 0 ? 'form-control-card--issue' : ''
+                            }`}
+                          >
+                            <div className="form-control-header">
+                              <span className="form-control-type">
+                                {control.tagName.toUpperCase()} ({control.type})
+                              </span>
+                              <code className="form-control-selector">{control.selector}</code>
+                            </div>
+                            <div className="form-control-meta">
+                              <span>
+                                name: <code>{control.name || '(未設定)'}</code>
+                              </span>
+                              {control.required && <span className="form-chip form-chip--required">必須</span>}
+                              {control.autocomplete && (
+                                <span className="form-chip form-chip--info">autocomplete: {control.autocomplete}</span>
+                              )}
+                            </div>
+                            {control.labels.length > 0 && (
+                              <div className="form-control-labels">
+                                <strong>ラベル:</strong> {control.labels.join(', ')}
+                              </div>
+                            )}
+                            {control.placeholder && (
+                              <div className="form-control-placeholder">
+                                <strong>placeholder:</strong> {control.placeholder}
+                              </div>
+                            )}
+                            {control.issues.length > 0 && (
+                              <ul className="form-control-issues">
+                                {control.issues.map((issue: FormControlIssue, issueIdx: number) => (
+                                  <li key={issueIdx} className={`severity-${issue.severity}`}>
+                                    <span className="issue-type">{issue.type}</span>
+                                    <span className="issue-message">{issue.message}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="form-submits-block">
+                    <h6>送信要素</h6>
+                    {form.submitButtons.length === 0 ? (
+                      <p className="form-empty-message">送信ボタンが見つかりません。</p>
+                    ) : (
+                      <ul className="form-submit-list">
+                        {form.submitButtons.map((button: FormSubmitButton, btnIndex: number) => (
+                          <li key={btnIndex}>
+                            <code>{button.selector}</code>
+                            <span className="submit-button-meta">
+                              {button.type} / {button.text || 'テキストなし'}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -1404,6 +1660,8 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
         return renderLayoutAnalysis(issues.layout as LayoutAnalysisResult | AnalyzerError | undefined);
       case 'validation':
         return renderW3CValidation(issues.validation?.w3c as W3CValidationResult | AnalyzerError | undefined);
+      case 'forms':
+        return renderFormsAnalysis(issues.forms as FormAnalysisResult | AnalyzerError | undefined);
       default:
         return null;
     }

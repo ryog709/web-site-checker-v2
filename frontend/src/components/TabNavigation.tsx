@@ -5,6 +5,7 @@ import type {
   LayoutAnalysisResult,
   AnalyzerError,
   W3CValidationResult,
+  FormAnalysisResult,
 } from '../types/index.js';
 import {
   Heading,
@@ -17,6 +18,7 @@ import {
   Terminal,
   LayoutDashboard,
   FileCode2,
+  ClipboardList,
 } from 'lucide-react';
 
 interface TabNavigationProps {
@@ -35,6 +37,9 @@ export const TabNavigation: React.FC<TabNavigationProps> = React.memo(({
 
   const isW3CResult = (value: W3CValidationResult | AnalyzerError | undefined): value is W3CValidationResult =>
     !!value && typeof value === 'object' && 'messages' in value;
+
+  const isFormResult = (value: FormAnalysisResult | AnalyzerError | undefined): value is FormAnalysisResult =>
+    !!value && typeof value === 'object' && 'forms' in value;
 
   const layoutCount = (() => {
     if (!issues.layout) {
@@ -57,6 +62,17 @@ export const TabNavigation: React.FC<TabNavigationProps> = React.memo(({
       return (validation.errorCount ?? 0) + (validation.warningCount ?? 0);
     }
     return validation.error ? 1 : 0;
+  })();
+
+  const formsCount = (() => {
+    const forms = issues.forms;
+    if (!forms) {
+      return 0;
+    }
+    if (isFormResult(forms)) {
+      return forms.summary?.formsWithIssues ?? 0;
+    }
+    return forms.error ? 1 : 0;
   })();
 
   const tabs = [
@@ -119,6 +135,12 @@ export const TabNavigation: React.FC<TabNavigationProps> = React.memo(({
       label: 'W3C検証',
       icon: FileCode2,
       count: w3cCount,
+    },
+    {
+      id: 'forms' as TabType,
+      label: 'フォーム',
+      icon: ClipboardList,
+      count: formsCount,
     },
   ];
 
