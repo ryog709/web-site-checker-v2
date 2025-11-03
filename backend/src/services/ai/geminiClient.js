@@ -151,7 +151,7 @@ export class GeminiClient {
    */
   createApiError(status, responseData) {
     const errorMessage = responseData.error?.message || 'Unknown API error';
-    const errorCode = responseData.error?.code || 'UNKNOWN_ERROR';
+    const apiErrorCode = responseData.error?.code || 'UNKNOWN_ERROR';
 
     let code;
     let retryAfter;
@@ -181,6 +181,7 @@ export class GeminiClient {
     }
 
     const error = new GeminiApiError(code, errorMessage, status);
+    error.apiCode = apiErrorCode;
     if (retryAfter) {
       error.retryAfter = retryAfter;
     }

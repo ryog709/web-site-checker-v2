@@ -124,7 +124,7 @@ async function analyzeDom(url) {
     linkIssues: [],
     links: [
       {
-        url: url,
+        url,
         text: 'Home',
         title: 'Homepage'
       }

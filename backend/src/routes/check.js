@@ -2,11 +2,9 @@ import express from 'express';
 import fetch from 'node-fetch';
 import { checkSinglePage, crawlSite, countPages } from '../services/checker.js';
 import { run as runPipeline } from '../services/pipeline/AnalysisPipeline/index.js';
-import { validateUrl } from '../utils/validation.js';
 import {
     validateUrlRouteHandler,
     asyncRouteHandler,
-    handleImageProxyError,
     sendErrorResponse
 } from '../utils/error-handler.js';
 
