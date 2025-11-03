@@ -152,8 +152,8 @@ frontend/src/
 - [x] `AnalysisPipeline/index.js` 実装（Gemini連携・エラーハンドリング含む）
 - [x] layout / w3c / form / metadata を含む各アナライザ実装・UI連携
 
-**Step B: `/api/check` 互換検証と切り替え（着手中）**
-- [ ] 代表URL複数で `/api/check` vs `/api/check-pipeline` の JSON diff 取得・差分分析
+**Step B: `/api/check` 互換検証と切り替え（進行中）**
+- [x] 代表URL複数で `/api/check` vs `/api/check-pipeline` の JSON diff 取得・差分分析
 - [ ] 差分解消（mapper調整 / legacy fallback 見直し / UI 表示確認）
 - [ ] `progress-log.md` に検証結果・証跡（Lighthouse/Gemini/axe/siteLinks/consoleErrors/auth/新セクション）を記録
 - [ ] `/api/check` エンドポイントを新パイプラインに切り替え、回帰テスト（curl + frontend）

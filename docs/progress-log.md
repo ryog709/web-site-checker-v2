@@ -13,6 +13,7 @@
 | 2025-11-03 10:15 | ⚙️ 進行中 | Phase 2.1 Step A 実装完了（layout/w3c/form/metadata 含むパイプライン + UI タブ追加） | `npm run build`（frontend） / `cd backend && npm run lint` |
 | 2025-11-03 10:45 | 📊 検証中 | `/api/check` vs `/api/check-pipeline` 差分スクリプト追加＆初回比較 | `node backend/scripts/compare-checks.mjs https://example.com` → 差分は新機能セクションのみ（layout/forms/metadata/w3c） |
 | 2025-11-03 11:05 | ✅ 互換確認 | 代表URL3件で旧APIと完全一致（拡張OFF） | `node backend/scripts/compare-checks.mjs <url>` を example.com / developer.mozilla.org / wikipedia.org で実行 → 差分0 |
+| 2025-11-03 11:20 | ⚙️ 切替準備 | `/api/check` をパイプライン互換モードへ委譲（body.enhanced で拡張ON） | route更新 + `npm run lint` |
 
 ### Step A 中間検証（スタブ段階, 2025-09-26 22:10）
 

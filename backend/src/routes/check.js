@@ -15,8 +15,15 @@ const router = express.Router();
  * POST /api/check
  */
 router.post('/check', validateUrlRouteHandler(async (req, res) => {
-    const { url, auth } = req.body;
-    const result = await checkSinglePage(url, auth);
+    const { url, auth, enhanced } = req.body;
+    const includeEnhancements = Boolean(enhanced);
+
+    const legacyResult = await checkSinglePage(url, auth);
+    const result = await runPipeline(url, auth, {
+        includeEnhancements,
+        baselineResult: legacyResult,
+    });
+
     res.json(result);
 }, 'Analysis'));
 
