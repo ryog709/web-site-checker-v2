@@ -3,7 +3,16 @@
 import { checkSinglePage } from '../src/services/checker.js';
 import { run as runPipeline } from '../src/services/pipeline/AnalysisPipeline/index.js';
 
-const [, , targetUrl = 'https://example.com', authUser, authPass] = process.argv;
+const args = process.argv.slice(2);
+let includeEnhancements = false;
+
+const flagIndex = args.indexOf('--enhanced');
+if (flagIndex !== -1) {
+  includeEnhancements = true;
+  args.splice(flagIndex, 1);
+}
+
+const [targetUrl = 'https://example.com', authUser, authPass] = args;
 
 const auth = authUser && authPass ? { username: authUser, password: authPass } : null;
 
@@ -44,10 +53,13 @@ function collectDiffs(legacy, pipeline, path = []) {
   return diffs;
 }
 
-console.log('🔍 比較開始:', targetUrl);
+console.log('🔍 比較開始:', targetUrl, includeEnhancements ? '(enhanced)' : '(compat)');
 
 const legacyResult = await checkSinglePage(targetUrl, auth);
-const pipelineResult = await runPipeline(targetUrl, auth);
+const pipelineResult = await runPipeline(targetUrl, auth, {
+  includeEnhancements,
+  baselineResult: legacyResult,
+});
 
 const diffs = collectDiffs(legacyResult, pipelineResult);
 

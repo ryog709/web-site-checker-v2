@@ -18,9 +18,12 @@
 4. ✅ `analyzers/axeAnalyzer.js`
 5. ✅ `analyzers/lighthouseAnalyzer.js`
 6. ✅ layout / w3c / form / metadata analyzers 追加
-7. ⏳ 統合検証: `/api/check` vs `/api/check-pipeline` 全項目差分ゼロ確認（Lighthouse/Gemini/axe/siteLinks/consoleErrors/auth/新セクション）
+7. ✅ 統合検証: `/api/check` vs `/api/check-pipeline` 全項目差分ゼロ確認（拡張 OFF 時）
 
-**次アクション**: `/api/check` と `/api/check-pipeline` の実データ比較 → 差分是正 → Step B として `/api/check` を新パイプラインへ切り替え、回帰テストとドキュメント更新。
+**次アクション**:
+- `/api/check` を新パイプライン実装へ切り替え（互換モードで稼働）
+- 切替後の回帰テスト（curl / frontend）と `docs/progress-log.md` 追記
+- 拡張機能（layout/form/metadata/w3c）を `/api/check-pipeline` 専用フラグで提供しつつ、Step C（/api/crawl など）移行計画を更新
 
 ## 成果報告前チェックリスト（必須）
 1. `/api/check` と `/api/check-pipeline` のレスポンス JSON を diff し、scores / issues / semanticAnalysis / siteLinks / consoleErrors / auth が一致していることを `docs/progress-log.md` にログ化

@@ -26,7 +26,7 @@ router.post('/check', validateUrlRouteHandler(async (req, res) => {
  */
 router.post('/check-pipeline', validateUrlRouteHandler(async (req, res) => {
     const { url, auth } = req.body;
-    const result = await runPipeline(url, auth);
+    const result = await runPipeline(url, auth, { includeEnhancements: true });
     res.json(result);
 }, 'Pipeline Analysis'));
 

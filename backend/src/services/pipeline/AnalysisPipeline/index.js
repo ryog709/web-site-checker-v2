@@ -17,33 +17,52 @@ import { analyzeMetadata } from '../analyzers/metadataAnalyzer.js';
  *
  * @param {string} url - 分析対象URL
  * @param {Object|null} auth - Basic認証情報
+ * @param {Object} [options]
+ * @param {boolean} [options.includeEnhancements=true] - 追加アナライザを実行するか
+ * @param {Object|null} [options.baselineResult=null] - 既存のlegacy結果がある場合は再利用
  * @returns {Promise<Object>} 旧API形式のレスポンス
  */
-export async function run(url, auth = null) {
-  console.log('[AnalysisPipeline] Starting analysis pipeline', { url, hasAuth: !!auth });
+export async function run(url, auth = null, options = {}) {
+  const { includeEnhancements = true, baselineResult = null } = options;
+
+  console.log('[AnalysisPipeline] Starting analysis pipeline', {
+    url,
+    hasAuth: !!auth,
+    includeEnhancements,
+    hasBaseline: !!baselineResult,
+  });
 
   try {
-    const legacyResult = await checkSinglePage(url, auth);
+    const legacyResult = baselineResult ?? (await checkSinglePage(url, auth));
 
-    const [layout, w3cValidation, forms, metadata] = await Promise.all([
-      analyzeLayout({ url, auth }).catch(err => ({ error: err.message, errorCode: 'LAYOUT_FAILED' })),
-      analyzeW3C({ url, auth }).catch(err => ({ error: err.message, errorCode: 'W3C_VALIDATION_FAILED' })),
-      analyzeForms({ url, auth }).catch(err => ({ error: err.message, errorCode: 'FORM_ANALYSIS_FAILED' })),
-      analyzeMetadata({ url, auth }).catch(err => ({ error: err.message, errorCode: 'METADATA_ANALYSIS_FAILED' })),
-    ]);
+    const issues = { ...legacyResult.issues };
 
-    const issues = {
-      ...legacyResult.issues,
-      ...(layout ? { layout } : {}),
-      ...(forms ? { forms } : {}),
-      ...(metadata ? { metadata } : {}),
-    };
+    if (includeEnhancements) {
+      const [layout, w3cValidation, forms, metadata] = await Promise.all([
+        analyzeLayout({ url, auth }).catch(err => ({ error: err.message, errorCode: 'LAYOUT_FAILED' })),
+        analyzeW3C({ url, auth }).catch(err => ({ error: err.message, errorCode: 'W3C_VALIDATION_FAILED' })),
+        analyzeForms({ url, auth }).catch(err => ({ error: err.message, errorCode: 'FORM_ANALYSIS_FAILED' })),
+        analyzeMetadata({ url, auth }).catch(err => ({ error: err.message, errorCode: 'METADATA_ANALYSIS_FAILED' })),
+      ]);
 
-    if (w3cValidation) {
-      issues.validation = {
-        ...(legacyResult.issues?.validation ?? {}),
-        w3c: w3cValidation,
-      };
+      if (layout) {
+        issues.layout = layout;
+      }
+
+      if (forms) {
+        issues.forms = forms;
+      }
+
+      if (metadata) {
+        issues.metadata = metadata;
+      }
+
+      if (w3cValidation) {
+        issues.validation = {
+          ...(legacyResult.issues?.validation ?? {}),
+          w3c: w3cValidation,
+        };
+      }
     }
 
     return {
