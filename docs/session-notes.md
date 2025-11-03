@@ -4,22 +4,23 @@
 
 ## 今日の前提 (500文字以内)
 - 最終目標: LangChain を活用して品質チェック精度を引き上げる分析パイプラインを確立する
-- **現状**: Phase 2.1 Step A 継続中（legacyResultMapper/AnalysisPipeline 骨格は整備済みだが実アナライザ未実装・レスポンス差分あり）
-- 完了: legacyResultMapper 実装、AnalysisPipeline スタブ統合、`/api/check-pipeline` エンドポイント追加、スタブ差分検証ログ
+- **現状**: Phase 2.1 Step A 実装完了。レイアウト / W3C / フォーム / メタ情報アナライザを含む新パイプラインが `/api/check-pipeline` で稼働中。次は Step B (`/api/check` 切り替え) に向けた互換検証フェーズ。
+- 完了: legacyResultMapper 実装、AnalysisPipeline 実装、layout / w3c / form / metadata analyzers 追加、フロントの新タブ実装。
 - 互換維持が必須なAPI: `/api/check`, `/api/crawl`, `/api/count-pages`
-- 重要制約: auth対応必須 / 既存レスポンス構造維持 / Lighthouse・axe・semanticAnalysis・siteLinks を旧APIと同値で返す
+- 重要制約: auth対応必須 / 既存レスポンス構造維持 / Lighthouse・axe・semanticAnalysis・siteLinks・consoleErrors を旧APIと同値で返す
 - 新規: `/api/chat` ＋ フロントチャットUI初期実装（Gemini 2.x Flash）。診断1件ごとにセッション生成し履歴は同一チェック内のみ保持。
 
 ## 再実装計画（2025-09-25 21:30 Codex CLI提案）
 **実装順序**（リスク最小化・段階的検証）:
 1. ✅ `legacyResultMapper.js` - 旧APIレスポンス構造マッピング
 2. ✅ `AnalysisPipeline/index.js` - 統合骨格（スタブで土台確認）
-3. ⏳ `analyzers/domAnalyzer.js` - 実DOM解析（Puppeteer + Cheerio）→ `/api/check` diff
-4. `analyzers/axeAnalyzer.js` → `/api/check` diff
-5. `analyzers/lighthouseAnalyzer.js` → `/api/check` diff
-6. 統合検証: 全項目差分ゼロ確認（Lighthouse/Gemini/axe/siteLinks/consoleErrors/auth）
+3. ✅ `analyzers/domAnalyzer.js` - 実DOM解析（Puppeteer + Cheerio）
+4. ✅ `analyzers/axeAnalyzer.js`
+5. ✅ `analyzers/lighthouseAnalyzer.js`
+6. ✅ layout / w3c / form / metadata analyzers 追加
+7. ⏳ 統合検証: `/api/check` vs `/api/check-pipeline` 全項目差分ゼロ確認（Lighthouse/Gemini/axe/siteLinks/consoleErrors/auth/新セクション）
 
-**次アクション**: domAnalyzer.js を実装し、実データで `/api/check` vs `/api/check-pipeline` の diff を取得・記録して差分解消の第一段階に着手
+**次アクション**: `/api/check` と `/api/check-pipeline` の実データ比較 → 差分是正 → Step B として `/api/check` を新パイプラインへ切り替え、回帰テストとドキュメント更新。
 
 ## 成果報告前チェックリスト（必須）
 1. `/api/check` と `/api/check-pipeline` のレスポンス JSON を diff し、scores / issues / semanticAnalysis / siteLinks / consoleErrors / auth が一致していることを `docs/progress-log.md` にログ化

@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import { launchBrowser, preparePage } from './utils/puppeteerHelpers.js';
 
 /* global document, window */
 
@@ -31,14 +31,7 @@ export async function analyzeLayout({ url, auth = null, viewports = DEFAULT_VIEW
     viewportCount: viewports.length
   });
 
-  const browser = await puppeteer.launch({
-    headless: 'new',
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage'
-    ]
-  });
+  const browser = await launchBrowser();
 
   const results = [];
 
@@ -55,23 +48,13 @@ export async function analyzeLayout({ url, auth = null, viewports = DEFAULT_VIEW
       try {
         page = await browser.newPage();
 
-        if (auth?.username && auth?.password) {
-          await page.authenticate({
-            username: auth.username,
-            password: auth.password
-          });
-        }
-
         await page.setViewport({
           width: viewport.width,
           height: viewport.height,
           deviceScaleFactor: 1
         });
 
-        await page.goto(url, {
-          waitUntil: ['load', 'domcontentloaded', 'networkidle2'],
-          timeout: 45000
-        });
+        await preparePage(page, url, auth);
 
         // レイアウト情報を取得
         const layoutInfo = await page.evaluate((maxElements) => {

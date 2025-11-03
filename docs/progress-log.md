@@ -10,6 +10,7 @@
 | 2025-09-26 09:30 | ✅ 完了 | legacyResultMapper.js スケルトン実装・テスト完了 | 全13テストケース成功（node --test）、ログ出力による動作追跡確認済み |
 | 2025-09-26 22:10 | ⚠️ 進行中 | Phase 2.1 Step A スタブ骨格整備 | calculateBasicScoresFromDom 実装、AnalysisPipeline/index.js 作成、/api/check-pipeline エンドポイント追加（実アナライザ未実装） |
 | 2025-09-27 14:15 | ⚙️ 実装中 | チャットQAセッション初期実装（/api/chat, Gemini 2.x Flash, フロントUI） | frontend `npm run build` / 手動API確認（create session → send message） |
+| 2025-11-03 10:15 | ⚙️ 進行中 | Phase 2.1 Step A 実装完了（layout/w3c/form/metadata 含むパイプライン + UI タブ追加） | `npm run build`（frontend） / `cd backend && npm run lint` |
 
 ### Step A 中間検証（スタブ段階, 2025-09-26 22:10）
 

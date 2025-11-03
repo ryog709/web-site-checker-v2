@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import { launchBrowser, preparePage } from './utils/puppeteerHelpers.js';
 
 /* global document */
 
@@ -13,30 +13,13 @@ const MAX_CONTROL_ISSUES = 5;
 export async function analyzeForms({ url, auth = null }) {
   console.log('[formAnalyzer] Starting form analysis', { url });
 
-  const browser = await puppeteer.launch({
-    headless: 'new',
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-    ],
-  });
+  const browser = await launchBrowser();
 
   try {
     const page = await browser.newPage();
 
     try {
-      if (auth?.username && auth?.password) {
-        await page.authenticate({
-          username: auth.username,
-          password: auth.password,
-        });
-      }
-
-      await page.goto(url, {
-        waitUntil: ['load', 'domcontentloaded', 'networkidle2'],
-        timeout: 45000,
-      });
+      await preparePage(page, url, auth);
 
       const formData = await page.evaluate(
         (controlSelector, submitSelector, maxControlIssues) => {
