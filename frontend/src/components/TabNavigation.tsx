@@ -1,6 +1,23 @@
 import React from 'react';
-import type { TabType, CheckResult } from '../types/index.js';
-import { Heading, Image, AlertTriangle, Link, FileText, Eye, Code, Terminal } from 'lucide-react';
+import type {
+  TabType,
+  CheckResult,
+  LayoutAnalysisResult,
+  AnalyzerError,
+  W3CValidationResult,
+} from '../types/index.js';
+import {
+  Heading,
+  Image,
+  AlertTriangle,
+  Link,
+  FileText,
+  Eye,
+  Code,
+  Terminal,
+  LayoutDashboard,
+  FileCode2,
+} from 'lucide-react';
 
 interface TabNavigationProps {
   activeTab: TabType;
@@ -13,6 +30,35 @@ export const TabNavigation: React.FC<TabNavigationProps> = React.memo(({
   onTabChange,
   issues,
 }) => {
+  const isLayoutResult = (value: LayoutAnalysisResult | AnalyzerError | undefined): value is LayoutAnalysisResult =>
+    !!value && typeof value === 'object' && 'viewports' in value;
+
+  const isW3CResult = (value: W3CValidationResult | AnalyzerError | undefined): value is W3CValidationResult =>
+    !!value && typeof value === 'object' && 'messages' in value;
+
+  const layoutCount = (() => {
+    if (!issues.layout) {
+      return 0;
+    }
+    if (isLayoutResult(issues.layout)) {
+      const overflowViewports = issues.layout.summary?.overflowViewports ?? 0;
+      const errorViewports = issues.layout.viewports?.filter(viewport => viewport.error).length ?? 0;
+      return overflowViewports + errorViewports;
+    }
+    return issues.layout.error ? 1 : 0;
+  })();
+
+  const w3cCount = (() => {
+    const validation = issues.validation?.w3c;
+    if (!validation) {
+      return 0;
+    }
+    if (isW3CResult(validation)) {
+      return (validation.errorCount ?? 0) + (validation.warningCount ?? 0);
+    }
+    return validation.error ? 1 : 0;
+  })();
+
   const tabs = [
     {
       id: 'headings' as TabType,
@@ -61,6 +107,18 @@ export const TabNavigation: React.FC<TabNavigationProps> = React.memo(({
       label: 'コンソールエラー',
       icon: Terminal,
       count: issues.consoleErrors?.length || 0,
+    },
+    {
+      id: 'layout' as TabType,
+      label: 'レイアウト',
+      icon: LayoutDashboard,
+      count: layoutCount,
+    },
+    {
+      id: 'validation' as TabType,
+      label: 'W3C検証',
+      icon: FileCode2,
+      count: w3cCount,
     },
   ];
 

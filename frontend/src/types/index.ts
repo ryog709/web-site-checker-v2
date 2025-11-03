@@ -354,7 +354,17 @@ export interface CrawlRequest {
   auth?: BasicAuth;
 }
 
-export type TabType = 'headings' | 'images' | 'image-issues' | 'links' | 'meta' | 'html-structure' | 'accessibility' | 'console-errors';
+export type TabType =
+  | 'headings'
+  | 'images'
+  | 'image-issues'
+  | 'links'
+  | 'meta'
+  | 'html-structure'
+  | 'accessibility'
+  | 'console-errors'
+  | 'layout'
+  | 'validation';
 
 export type ChatRole = 'user' | 'assistant';
 

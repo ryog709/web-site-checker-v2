@@ -911,6 +911,248 @@ body {
   color: var(--color-text-secondary);
 }
 
+.summary-label {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: var(--spacing-xs);
+}
+
+.summary-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.layout-analysis-section,
+.w3c-validation-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.layout-summary-grid,
+.validation-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.viewport-grid,
+.validation-messages-grid {
+  display: grid;
+  gap: var(--spacing-md);
+}
+
+.viewport-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.validation-messages-grid {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.viewport-card,
+.validation-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.viewport-card--overflow {
+  border-color: var(--color-warning);
+}
+
+.viewport-card--error {
+  border-color: var(--color-error);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.status-pill--success {
+  background: #f0fdf4;
+  color: var(--color-success);
+}
+
+.status-pill--warning {
+  background: #fffbeb;
+  color: var(--color-warning);
+}
+
+.status-pill--error {
+  background: #fef2f2;
+  color: var(--color-error);
+}
+
+.status-pill--info {
+  background: #eef2ff;
+  color: var(--color-info);
+}
+
+.viewport-header,
+.validation-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.viewport-header h5,
+.validation-card-header h5 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.viewport-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.viewport-size {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.viewport-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.metric-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 2px;
+}
+
+.metric-value {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.overflow-summary {
+  font-size: 0.9rem;
+  color: var(--color-warning);
+  font-weight: 600;
+}
+
+.overflow-elements-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.overflow-element-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.85rem;
+}
+
+.overflow-amount {
+  font-weight: 600;
+  color: var(--color-warning);
+}
+
+.overflow-snippet {
+  margin: var(--spacing-xs) 0 0;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.viewport-error-message {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-error);
+}
+
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  text-align: center;
+}
+
+.error-icon-large {
+  color: var(--color-error);
+}
+
+.error-code {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.validation-card--error {
+  border-color: var(--color-error);
+}
+
+.validation-card--warning {
+  border-color: var(--color-warning);
+}
+
+.validation-card--info {
+  border-color: var(--color-info);
+}
+
+.validation-card-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.validation-location {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.validation-message-text {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.validation-extract {
+  margin: 0;
+  background: var(--color-background-secondary);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--color-text-primary);
+  overflow-x: auto;
+}
+
+.validation-subtype {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+
 /* Tab navigation */
 .tab-navigation {
   display: grid;

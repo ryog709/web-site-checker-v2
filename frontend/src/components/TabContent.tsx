@@ -1,6 +1,34 @@
 import React, { useState, useCallback } from 'react';
-import type { TabType, CheckResult, Issue, Heading, ImageInfo, BasicAuth, MetaInfo, ConsoleError } from '../types/index.js';
-import { ExternalLink, AlertTriangle, AlertCircle, Info, Image as ImageIcon, FileText, Eye, Terminal, Clock, LinkIcon, Target } from 'lucide-react';
+import type {
+  TabType,
+  CheckResult,
+  Issue,
+  Heading,
+  ImageInfo,
+  BasicAuth,
+  MetaInfo,
+  ConsoleError,
+  LayoutAnalysisResult,
+  AnalyzerError,
+  W3CValidationResult,
+} from '../types/index.js';
+import {
+  ExternalLink,
+  AlertTriangle,
+  AlertCircle,
+  Info,
+  Image as ImageIcon,
+  FileText,
+  Eye,
+  Terminal,
+  Clock,
+  LinkIcon,
+  Target,
+  LayoutDashboard,
+  MonitorSmartphone,
+  FileCode2,
+  Bug,
+} from 'lucide-react';
 import { Modal } from './Modal.js';
 import { getAxeTranslation, translateImpact, translateWcagTag } from '../constants/axeTranslations.js';
 import { ImageRendererHorizontal, ImageRendererFull, ImageRendererIssue } from './ImageRenderer.js';
@@ -117,6 +145,13 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
 }) => {
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
+  const isAnalyzerErrorResult = (value: LayoutAnalysisResult | W3CValidationResult | AnalyzerError | undefined): value is AnalyzerError =>
+    !!value &&
+    typeof value === 'object' &&
+    'error' in value &&
+    !('viewports' in value) &&
+    !('messages' in value);
+
   // 検索キーワードをクリップボードにコピー（メモ化で最適化）
   const handleCopyKeyword = useCallback(async (keyword: string, event: React.MouseEvent) => {
     try {
@@ -220,6 +255,290 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
             );
           })}
         </div>
+      </div>
+    );
+  };
+
+  const renderLayoutAnalysis = (layoutData: LayoutAnalysisResult | AnalyzerError | undefined) => {
+    if (!layoutData) {
+      return (
+        <div className="no-issues">
+          <div className="success-state">
+            <div className="success-icon">ℹ️</div>
+            <h3>レイアウト解析は未実行です</h3>
+            <p>診断を再実行してレイアウト情報を取得してください。</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (isAnalyzerErrorResult(layoutData)) {
+      return (
+        <div className="no-issues">
+          <div className="error-state">
+            <Bug size={40} className="error-icon-large" />
+            <h3>レイアウト解析に失敗しました</h3>
+            <p>{layoutData.error}</p>
+            {layoutData.errorCode && <p className="error-code">エラーコード: {layoutData.errorCode}</p>}
+          </div>
+        </div>
+      );
+    }
+
+    const summary = layoutData.summary;
+
+    const formatDateTime = (isoString: string | undefined) => {
+      if (!isoString) return '-';
+      try {
+        return new Date(isoString).toLocaleString('ja-JP');
+      } catch {
+        return isoString;
+      }
+    };
+
+    return (
+      <div className="layout-analysis-section">
+        <div className="section-header">
+          <div className="section-title">
+            <LayoutDashboard size={20} />
+            <h4>レスポンシブレイアウト診断</h4>
+          </div>
+          <p className="section-description">
+            指定ビューポートごとのドキュメント幅と横スクロール発生状況を可視化します。
+          </p>
+        </div>
+
+        {summary && (
+          <div className="layout-summary-grid">
+            <div className="summary-card">
+              <span className="summary-label">検証ビューポート数</span>
+              <strong className="summary-value">{summary.totalViewports}</strong>
+            </div>
+            <div className={`summary-card ${summary.hasOverflow ? 'summary-card--warning' : 'summary-card--success'}`}>
+              <span className="summary-label">横スクロール検出</span>
+              <strong className="summary-value">{summary.overflowViewports}</strong>
+              <span className={`status-pill ${summary.hasOverflow ? 'status-pill--warning' : 'status-pill--success'}`}>
+                {summary.hasOverflow ? '要対応あり' : '問題なし'}
+              </span>
+            </div>
+            <div className="summary-card">
+              <span className="summary-label">最終チェック</span>
+              <strong className="summary-value">{formatDateTime(summary.checkedAt)}</strong>
+            </div>
+          </div>
+        )}
+
+        <div className="viewport-grid">
+          {layoutData.viewports.map((viewport, index) => {
+            const statusClass = viewport.error
+              ? 'status-pill--error'
+              : viewport.hasHorizontalOverflow
+              ? 'status-pill--warning'
+              : 'status-pill--success';
+            const statusLabel = viewport.error
+              ? '取得失敗'
+              : viewport.hasHorizontalOverflow
+              ? `横スクロール +${viewport.horizontalOverflow}px`
+              : '問題なし';
+
+            return (
+              <div
+                key={index}
+                className={`viewport-card ${
+                  viewport.error
+                    ? 'viewport-card--error'
+                    : viewport.hasHorizontalOverflow
+                    ? 'viewport-card--overflow'
+                    : 'viewport-card--ok'
+                }`}
+              >
+                <div className="viewport-header">
+                  <MonitorSmartphone size={18} />
+                  <div className="viewport-meta">
+                    <h5>{viewport.label}</h5>
+                    <span className="viewport-size">
+                      {viewport.width} × {viewport.height}
+                    </span>
+                  </div>
+                  <span className={`status-pill ${statusClass}`}>{statusLabel}</span>
+                </div>
+
+                {viewport.error ? (
+                  <p className="viewport-error-message">{viewport.error}</p>
+                ) : (
+                  <>
+                    <div className="viewport-metrics">
+                      <div>
+                        <span className="metric-label">ビューポート幅</span>
+                        <span className="metric-value">{viewport.viewportWidth ?? '-'}px</span>
+                      </div>
+                      <div>
+                        <span className="metric-label">ドキュメント幅</span>
+                        <span className="metric-value">{viewport.documentWidth ?? '-'}px</span>
+                      </div>
+                    </div>
+
+                    {viewport.hasHorizontalOverflow && (
+                      <>
+                        <div className="overflow-summary">
+                          横スクロールが発生しています。以下の要素を確認してください。
+                        </div>
+                        {viewport.overflowElements && viewport.overflowElements.length > 0 && (
+                          <ul className="overflow-elements-list">
+                            {viewport.overflowElements.map((element, elIndex) => (
+                              <li key={elIndex}>
+                                <div className="overflow-element-header">
+                                  <code>{element.selector}</code>
+                                  <span className="overflow-amount">+{element.overflow}px</span>
+                                </div>
+                                {element.textSnippet && element.textSnippet.length > 0 && (
+                                  <p className="overflow-snippet">{element.textSnippet}</p>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderW3CValidation = (validationData: W3CValidationResult | AnalyzerError | undefined) => {
+    if (!validationData) {
+      return (
+        <div className="no-issues">
+          <div className="success-state">
+            <div className="success-icon">ℹ️</div>
+            <h3>W3Cバリデーションは未実行です</h3>
+            <p>診断を再実行してバリデーション結果を取得してください。</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (isAnalyzerErrorResult(validationData)) {
+      return (
+        <div className="no-issues">
+          <div className="error-state">
+            <Bug size={40} className="error-icon-large" />
+            <h3>W3C検証に失敗しました</h3>
+            <p>{validationData.error}</p>
+            {validationData.errorCode && <p className="error-code">エラーコード: {validationData.errorCode}</p>}
+          </div>
+        </div>
+      );
+    }
+
+    const formatLocation = (line?: number | null, column?: number | null) => {
+      if (typeof line !== 'number') {
+        return '-';
+      }
+      if (typeof column !== 'number') {
+        return `L${line}`;
+      }
+      return `L${line}:C${column}`;
+    };
+
+    const typeToLabel = (type: string) => {
+      switch (type) {
+        case 'error':
+          return 'エラー';
+        case 'info':
+          return '情報';
+        default:
+          return '警告';
+      }
+    };
+
+    return (
+      <div className="w3c-validation-section">
+        <div className="section-header">
+          <div className="section-title">
+            <FileCode2 size={20} />
+            <h4>W3Cマークアップ検証</h4>
+          </div>
+          <p className="section-description">
+            Nu HTML Checkerの結果。HTML構文エラーや推奨事項を一覧表示します。
+          </p>
+        </div>
+
+        <div className="validation-summary-grid">
+          <div className="summary-card summary-card--error">
+            <span className="summary-label">エラー</span>
+            <strong className="summary-value">{validationData.errorCount}</strong>
+          </div>
+          <div className="summary-card summary-card--warning">
+            <span className="summary-label">警告</span>
+            <strong className="summary-value">{validationData.warningCount}</strong>
+          </div>
+          <div className="summary-card">
+            <span className="summary-label">検証モード</span>
+            <strong className="summary-value">
+              {validationData.sourceType === 'html' ? 'HTML投稿（Basic認証対応）' : 'URL指定'}
+            </strong>
+          </div>
+        </div>
+
+        {validationData.messages.length === 0 ? (
+          <div className="no-issues">
+            <div className="success-state">
+              <div className="success-icon">🎉</div>
+              <h3>W3Cエラーは検出されませんでした</h3>
+              <p>HTML構文はW3C準拠です。</p>
+            </div>
+          </div>
+        ) : (
+          <div className="validation-messages-grid">
+            {validationData.messages.map((message, index) => {
+              const statusClass =
+                message.type === 'error'
+                  ? 'status-pill--error'
+                  : message.type === 'info'
+                  ? 'status-pill--info'
+                  : 'status-pill--warning';
+
+              return (
+                <div
+                  key={index}
+                  className={`validation-card ${
+                    message.type === 'error'
+                      ? 'validation-card--error'
+                      : message.type === 'info'
+                      ? 'validation-card--info'
+                      : 'validation-card--warning'
+                  }`}
+                >
+                  <div className="validation-card-header">
+                    <FileCode2 size={18} />
+                    <div className="validation-card-meta">
+                      <h5>{typeToLabel(message.type)}</h5>
+                      <span className="validation-location">
+                        {formatLocation(message.lastLine, message.lastColumn)}
+                      </span>
+                    </div>
+                    <span className={`status-pill ${statusClass}`}>{typeToLabel(message.type)}</span>
+                  </div>
+                  <p className="validation-message-text">{message.message}</p>
+                  {message.extract && (
+                    <pre className="validation-extract">
+                      {message.extract}
+                    </pre>
+                  )}
+                  {message.subType && (
+                    <div className="validation-subtype">種別: {message.subType}</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   };
@@ -1081,6 +1400,10 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
         return renderAccessibilityIssues();
       case 'console-errors':
         return renderConsoleErrors(issues.consoleErrors || []);
+      case 'layout':
+        return renderLayoutAnalysis(issues.layout as LayoutAnalysisResult | AnalyzerError | undefined);
+      case 'validation':
+        return renderW3CValidation(issues.validation?.w3c as W3CValidationResult | AnalyzerError | undefined);
       default:
         return null;
     }
