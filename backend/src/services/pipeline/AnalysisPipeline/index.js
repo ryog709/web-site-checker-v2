@@ -11,6 +11,7 @@ import { analyzeLayout } from '../analyzers/layoutAnalyzer.js';
 import { analyzeW3C } from '../analyzers/w3cAnalyzer.js';
 import { analyzeForms } from '../analyzers/formAnalyzer.js';
 import { analyzeMetadata } from '../analyzers/metadataAnalyzer.js';
+import { launchBrowser } from '../analyzers/utils/puppeteerHelpers.js';
 
 /**
  * パイプライン実行
@@ -38,12 +39,36 @@ export async function run(url, auth = null, options = {}) {
     const issues = { ...legacyResult.issues };
 
     if (includeEnhancements) {
-      const [layout, w3cValidation, forms, metadata] = await Promise.all([
-        analyzeLayout({ url, auth }).catch(err => ({ error: err.message, errorCode: 'LAYOUT_FAILED' })),
-        analyzeW3C({ url, auth }).catch(err => ({ error: err.message, errorCode: 'W3C_VALIDATION_FAILED' })),
-        analyzeForms({ url, auth }).catch(err => ({ error: err.message, errorCode: 'FORM_ANALYSIS_FAILED' })),
-        analyzeMetadata({ url, auth }).catch(err => ({ error: err.message, errorCode: 'METADATA_ANALYSIS_FAILED' })),
-      ]);
+      let sharedBrowserPromise = null;
+      const getSharedBrowser = () => {
+        if (!sharedBrowserPromise) {
+          sharedBrowserPromise = launchBrowser();
+        }
+        return sharedBrowserPromise;
+      };
+
+      let layout;
+      let w3cValidation;
+      let forms;
+      let metadata;
+
+      try {
+        [layout, w3cValidation, forms, metadata] = await Promise.all([
+          analyzeLayout({ url, auth, getBrowser: getSharedBrowser }).catch(err => ({ error: err.message, errorCode: 'LAYOUT_FAILED' })),
+          analyzeW3C({ url, auth }).catch(err => ({ error: err.message, errorCode: 'W3C_VALIDATION_FAILED' })),
+          analyzeForms({ url, auth, getBrowser: getSharedBrowser }).catch(err => ({ error: err.message, errorCode: 'FORM_ANALYSIS_FAILED' })),
+          analyzeMetadata({ url, auth }).catch(err => ({ error: err.message, errorCode: 'METADATA_ANALYSIS_FAILED' })),
+        ]);
+      } finally {
+        if (sharedBrowserPromise) {
+          try {
+            const browser = await sharedBrowserPromise;
+            await browser.close();
+          } catch (browserCloseError) {
+            console.warn('[AnalysisPipeline] Failed to close shared browser', browserCloseError);
+          }
+        }
+      }
 
       if (layout) {
         issues.layout = layout;

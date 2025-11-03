@@ -25,13 +25,21 @@ const MAX_OVERFLOW_ELEMENTS = 5;
  * @param {Array} [params.viewports]
  * @returns {Promise<Object>}
  */
-export async function analyzeLayout({ url, auth = null, viewports = DEFAULT_VIEWPORTS }) {
+export async function analyzeLayout({
+  url,
+  auth = null,
+  viewports = DEFAULT_VIEWPORTS,
+  browser: providedBrowser = null,
+  getBrowser = null,
+}) {
   console.log('[layoutAnalyzer] Starting layout analysis', {
     url,
     viewportCount: viewports.length
   });
 
-  const browser = await launchBrowser();
+  const shouldManageBrowser = !providedBrowser && !getBrowser;
+  const browser =
+    providedBrowser || (getBrowser ? await getBrowser() : await launchBrowser());
 
   const results = [];
 
@@ -164,6 +172,8 @@ export async function analyzeLayout({ url, auth = null, viewports = DEFAULT_VIEW
     console.error('[layoutAnalyzer] Layout analysis failed', error);
     throw error;
   } finally {
-    await browser.close();
+    if (shouldManageBrowser && browser) {
+      await browser.close();
+    }
   }
 }

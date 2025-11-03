@@ -10,10 +10,17 @@ const SUBMIT_SELECTOR =
 
 const MAX_CONTROL_ISSUES = 5;
 
-export async function analyzeForms({ url, auth = null }) {
+export async function analyzeForms({
+  url,
+  auth = null,
+  browser: providedBrowser = null,
+  getBrowser = null,
+}) {
   console.log('[formAnalyzer] Starting form analysis', { url });
 
-  const browser = await launchBrowser();
+  const shouldManageBrowser = !providedBrowser && !getBrowser;
+  const browser =
+    providedBrowser || (getBrowser ? await getBrowser() : await launchBrowser());
 
   try {
     const page = await browser.newPage();
@@ -259,6 +266,8 @@ export async function analyzeForms({ url, auth = null }) {
     console.error('[formAnalyzer] Analysis failed', error);
     throw error;
   } finally {
-    await browser.close();
+    if (shouldManageBrowser && browser) {
+      await browser.close();
+    }
   }
 }
