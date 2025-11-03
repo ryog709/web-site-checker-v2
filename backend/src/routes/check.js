@@ -1,12 +1,13 @@
 import express from 'express';
 import fetch from 'node-fetch';
 import { checkSinglePage, crawlSite, countPages } from '../services/checker.js';
+import { run as runPipeline } from '../services/pipeline/AnalysisPipeline/index.js';
 import { validateUrl } from '../utils/validation.js';
-import { 
-    validateUrlRouteHandler, 
-    asyncRouteHandler, 
-    handleImageProxyError, 
-    sendErrorResponse 
+import {
+    validateUrlRouteHandler,
+    asyncRouteHandler,
+    handleImageProxyError,
+    sendErrorResponse
 } from '../utils/error-handler.js';
 
 const router = express.Router();
@@ -20,6 +21,16 @@ router.post('/check', validateUrlRouteHandler(async (req, res) => {
     const result = await checkSinglePage(url, auth);
     res.json(result);
 }, 'Analysis'));
+
+/**
+ * パイプライン版診断API（新実装）
+ * POST /api/check-pipeline
+ */
+router.post('/check-pipeline', validateUrlRouteHandler(async (req, res) => {
+    const { url, auth } = req.body;
+    const result = await runPipeline(url, auth);
+    res.json(result);
+}, 'Pipeline Analysis'));
 
 /**
  * ページ数カウントAPI

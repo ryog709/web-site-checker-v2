@@ -9,7 +9,7 @@
 export function getGeminiConfig() {
   return {
     apiKey: process.env.GEMINI_API_KEY || '',
-    model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
+    model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
     enabled: process.env.GEMINI_ENABLED === 'true',
     rateLimitPerMinute: parseInt(process.env.GEMINI_RATE_LIMIT_PER_MINUTE) || 30,
     timeout: parseInt(process.env.GEMINI_TIMEOUT) || 30000,

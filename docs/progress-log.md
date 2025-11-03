@@ -3,7 +3,48 @@
 | 日時 | ステータス | 変更概要 | 差分確認/テスト |
 |------|------------|----------|------------------|
 | 2025-09-25 10:50 | 🛑 差し戻し | Phase 2.1 Step A 試行（互換レイヤー整備） | `/api/check` vs `/api/check-pipeline` 比較 → スコア不一致、Gemini/axe/siteLinks 欠落 |
-| 2025-09-25 11:40 | ⚠️ 調査中 | Phase 2.1 Step A 実装資産の所在確認 | `ls backend/src/services/pipeline` → analyzers/のみ、空ディレクトリ。`git log -- backend/src/services/pipeline` に履歴なし |
+| 2025-09-25 21:30 | 📋 調査完了 | パイプライン実装資産調査・再実装計画策定 | git履歴・reflog・stash 検索 → 実装なし確認。Codex CLI提案の段階的アプローチ採用 |
+| 2025-09-25 21:45 | 📝 構造分析完了 | 旧API `/api/check` レスポンス構造抽出 | checker.js コード解析 → TypeScript型定義82KB取得（Codex CLI） |
+| 2025-09-25 21:47 | 📋 マッピング表完成 | legacyResultMapper マッピング仕様作成 | `docs/legacy-response-mapping.md` 全フィールド対応表・変換関数シグネチャ定義 |
+| 2025-09-25 21:48 | ⏸️ 中断（未完） | Step A基盤構築フェーズ | **次回**: スケルトン実装→ダミー検証→旧API diff必須 |
+| 2025-09-26 09:30 | ✅ 完了 | legacyResultMapper.js スケルトン実装・テスト完了 | 全13テストケース成功（node --test）、ログ出力による動作追跡確認済み |
+| 2025-09-26 22:10 | ⚠️ 進行中 | Phase 2.1 Step A スタブ骨格整備 | calculateBasicScoresFromDom 実装、AnalysisPipeline/index.js 作成、/api/check-pipeline エンドポイント追加（実アナライザ未実装） |
+
+### Step A 中間検証（スタブ段階, 2025-09-26 22:10）
+
+**実行コマンド**:
+```bash
+curl -X POST http://localhost:4000/api/check -H "Content-Type: application/json" -d '{"url":"https://example.com"}'
+curl -X POST http://localhost:4000/api/check-pipeline -H "Content-Type: application/json" -d '{"url":"https://example.com"}'
+```
+
+**主要メトリクス比較**:
+
+| 項目 | /api/check (旧) | /api/check-pipeline (新・スタブ) | 差分理由 |
+|------|----------------|--------------------------------|---------|
+| scores.performance | 84 | 85 | スタブ固定値。実アナライザ実装時に同値化 |
+| scores.accessibility | 100 | 92 | スタブ固定値。実アナライザ実装時に同値化 |
+| scores.seo | 60 | 95 | スタブ固定値。実アナライザ実装時に同値化 |
+| issues.accessibility.axe | html-has-lang違反 (実データ) | color-contrast違反 (スタブ) | スタブデータ。axeAnalyzer 実装時に実違反を返す |
+| semanticAnalysis.isEnabled | true | true | ✅ 同値 |
+| semanticAnalysis.processingTime | 0 (キャッシュ未使用) | 250 (スタブ) | スタブ固定値。Gemini実装時に実時間を返す |
+| siteLinks | [] | [1件 スタブ] | スタブデータ。domAnalyzer 実装時に実リンクを返す |
+
+**動作確認済み項目**:
+- ✅ パイプライン実行フロー（context → 5アナライザ並列 → mapper → レスポンス）
+- ✅ legacyResultMapper による旧API形式への変換
+- ✅ calculateBasicScoresFromDom フォールバックロジック（未使用だが動作可能）
+- ✅ エラーハンドリング（各アナライザ個別 catch → 結果に error 含める）
+- ✅ ログ出力による各段階の追跡可能性
+
+**未実装（次フェーズ対応）**:
+- domAnalyzer: 実DOM解析（Puppeteer + Cheerio）
+- axeAnalyzer: 実axe-core実行
+- lighthouseAnalyzer: 実Lighthouse実行
+- geminiAnalyzer: 実GeminiService連携
+- browserAnalyzer: 実consoleErrors収集
+
+**次アクション**: domAnalyzer.js 実装 → 旧API diff → 順次アナライザ追加
 
 ### 差し戻し理由（2025-09-25 10:50）
 - LighthouseAnalyzer が Puppeteer の非公開 `_browserContext` 参照に依存し、常にフォールバックスコア（performance 75 等）を返している
@@ -49,6 +90,33 @@
 4. **証跡記録タイミング**:
    - 各アナライザ導入時: diff結果・主要メトリクス（Lighthouse実測/Gemini/axe件数/siteLinks/consoleErrors）を progress-log.md に追記
    - フェーズ完了時: diff ゼロログと計測証跡を保存
+
+### 旧API レスポンス構造分析（2025-09-25 21:45）
+
+**トップレベル構造**:
+```typescript
+{
+  url: string;
+  timestamp: string;
+  scores: LighthouseScores;        // 4科目スコア (performance/accessibility/bestpractices/seo)
+  issues: IssuesBundle;            // 各種問題検出結果
+  siteLinks: SiteLink[];           // 同一ドメインリンク (最大20件)
+  semanticAnalysis: SemanticAnalysisResult; // Gemini分析結果
+  auth: AuthInfo | null;           // Basic認証情報
+}
+```
+
+**重要な実装詳細**:
+1. **Lighthouse Scores**: `runLighthouse()` 成功時は実測値、失敗時は `calculateBasicScores()` でフォールバック
+2. **axe-core Violations**: `runAxeCore()` が WCAG違反を検出、impact/nodes/target含む詳細構造
+3. **Gemini Analysis**: `GeminiService.analyzeWebsite()` 経由、4種類の分析タイプ対応（content-quality/usability/comprehensive/text）
+4. **siteLinks**: `collectSiteLinks()` が同一ドメインのリンクを最大20件収集、テキスト100文字制限
+5. **consoleErrors**: `collectConsoleErrors()` が別ページで console/pageerror/requestfailed を監視・収集
+
+**マッピング方針**:
+- 新パイプライン → 旧形式への変換は `legacyResultMapper.js` で一元管理
+- 各アナライザ出力を中間形式で保持 → mapper で旧形式に変換
+- 空配列/null の場合も取得処理が実行されたことをログ記録
 
 記入ルール:
 - 1行 = 1コミット or 1つの大作業終了時点
