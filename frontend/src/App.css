@@ -3117,6 +3117,23 @@ body {
   line-height: 1.5;
 }
 
+.lighthouse-help-link {
+  color: var(--color-primary);
+  text-decoration: underline;
+  transition: color var(--transition-base);
+}
+
+.lighthouse-help-link:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
+
+.lighthouse-help-link:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 .violation-info {
   display: flex;
   align-items: center;

@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { Modal } from './Modal.js';
 import { getAxeTranslation, translateImpact, translateWcagTag } from '../constants/axeTranslations.js';
+import { translateLighthouseTitle, translateLighthouseDescription, getLighthouseHelpUrl, getLighthouseHelpText } from '../constants/lighthouseTranslations.js';
 import { ImageRendererHorizontal, ImageRendererFull, ImageRendererIssue } from './ImageRenderer.js';
 
 interface TabContentProps {
@@ -54,7 +55,7 @@ interface TabContentProps {
 // セレクターから検索しやすい情報を抽出する関数
 const extractSearchableInfo = (selector: string, ruleId: string): string[] => {
   const searchableItems: string[] = [];
-  
+
   // クラス名を抽出
   const classMatches = selector.match(/\.([a-zA-Z0-9_-]+)/g);
   if (classMatches) {
@@ -65,7 +66,7 @@ const extractSearchableInfo = (selector: string, ruleId: string): string[] => {
       searchableItems.push(className);
     });
   }
-  
+
   // ID名を抽出
   const idMatches = selector.match(/#([a-zA-Z0-9_-]+)/g);
   if (idMatches) {
@@ -75,7 +76,7 @@ const extractSearchableInfo = (selector: string, ruleId: string): string[] => {
       searchableItems.push(idName);
     });
   }
-  
+
   // 要素名を抽出（問題の種類に応じて）
   if (ruleId === 'button-name') {
     const buttonMatches = selector.match(/button/gi);
@@ -85,7 +86,7 @@ const extractSearchableInfo = (selector: string, ruleId: string): string[] => {
       searchableItems.push('type="button"');
       searchableItems.push('type="submit"');
     }
-    
+
     // input[type="button"]やinput[type="submit"]も対象
     if (selector.includes('input')) {
       searchableItems.push('<input');
@@ -94,7 +95,7 @@ const extractSearchableInfo = (selector: string, ruleId: string): string[] => {
       searchableItems.push('type="image"');
     }
   }
-  
+
   // link-name問題の場合
   if (ruleId === 'link-name') {
     if (selector.includes('a')) {
@@ -103,7 +104,7 @@ const extractSearchableInfo = (selector: string, ruleId: string): string[] => {
       searchableItems.push('link');
     }
   }
-  
+
   // image-alt問題の場合
   if (ruleId === 'image-alt') {
     if (selector.includes('img')) {
@@ -112,7 +113,7 @@ const extractSearchableInfo = (selector: string, ruleId: string): string[] => {
       searchableItems.push('alt=');
     }
   }
-  
+
   // label問題の場合
   if (ruleId === 'label') {
     if (selector.includes('input')) {
@@ -127,7 +128,7 @@ const extractSearchableInfo = (selector: string, ruleId: string): string[] => {
       searchableItems.push('<textarea');
     }
   }
-  
+
   // 属性値を抽出
   const attrMatches = selector.match(/\[([^=\]]+)=?"?([^"\]]*)"?\]/g);
   if (attrMatches) {
@@ -145,7 +146,7 @@ const extractSearchableInfo = (selector: string, ruleId: string): string[] => {
       }
     });
   }
-  
+
   // 重複を除去して最初の6個まで返す
   return [...new Set(searchableItems)].slice(0, 6);
 };
@@ -188,18 +189,18 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
   const handleCopyKeyword = useCallback(async (keyword: string, event: React.MouseEvent) => {
     try {
       await navigator.clipboard.writeText(keyword);
-      
+
       // 視覚的フィードバック
       const target = event.currentTarget as HTMLElement;
       target.classList.add('copied');
-      
+
       setTimeout(() => {
         target.classList.remove('copied');
       }, 600);
-      
+
     } catch (err) {
       console.warn('クリップボードへのコピーに失敗しました:', err);
-      
+
       // フォールバック: テキスト選択
       const selection = window.getSelection();
       const range = document.createRange();
@@ -252,10 +253,10 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
         <div className="headings-tree-modern">
           {headingsStructure.map((heading, index) => {
             const indentLevel = (heading.level - 1) * 24;
-            
+
             return (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className={`heading-card ${heading.hasImage ? 'has-image' : ''} ${heading.isEmpty ? 'is-empty' : ''}`}
                 style={{ marginLeft: `${indentLevel}px` }}
               >
@@ -267,7 +268,7 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                     <span className="heading-text-modern">
                       {heading.text || '（内容なし）'}
                     </span>
-                    
+
                     {/* 画像を同じ行に表示（テキスト情報なし） */}
                     {heading.hasImage && heading.images.length > 0 && (
                       <div className="heading-images-horizontal">
@@ -859,10 +860,10 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                   />
                 )}
               </div>
-              
+
               <div className="image-info-card">
                 <div className="image-number">#{image.index}</div>
-                
+
                 <div className="image-attributes">
                   <div className="attribute-row">
                     <span className="attribute-label">Alt:</span>
@@ -874,40 +875,40 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                       <span className="attribute-value alt-missing">⚠️ なし</span>
                     )}
                   </div>
-                  
+
                   <div className="attribute-row">
                     <span className="attribute-label">Width:</span>
                     <span className={`attribute-value ${image.width ? 'dimension-present' : 'dimension-missing'}`}>
                       {image.width ?? '❌ なし'}
                     </span>
                   </div>
-                  
+
                   <div className="attribute-row">
                     <span className="attribute-label">Height:</span>
                     <span className={`attribute-value ${image.height ? 'dimension-present' : 'dimension-missing'}`}>
                       {image.height ?? '❌ なし'}
                     </span>
                   </div>
-                  
+
                   {image.title && (
                     <div className="attribute-row">
                       <span className="attribute-label">Title:</span>
                       <span className="attribute-value">"{image.title}"</span>
                     </div>
                   )}
-                  
+
                   <div className="attribute-row">
                     <span className="attribute-label">ファイル:</span>
                     <span className="attribute-value filename">{image.filename || 'ファイル名不明'}</span>
                   </div>
-                  
+
                   {image.type === 'svg' && (
                     <div className="attribute-row">
                       <span className="attribute-label">タイプ:</span>
                       <span className="attribute-value svg-type">📐 SVG</span>
                     </div>
                   )}
-                  
+
                   {image.role && (
                     <div className="attribute-row">
                       <span className="attribute-label">Role:</span>
@@ -915,7 +916,7 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                     </div>
                   )}
                 </div>
-                
+
                 <div className="image-status">
                   {image.hasAlt && image.hasDimensions && (
                     <span className="status-good">✅ 完璧</span>
@@ -965,7 +966,7 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                 {getSeverityIcon(issue.severity)}
                 <span className="issue-type">{issue.type || 'その他'}</span>
               </div>
-              
+
               {/* 画像問題の場合は画像プレビューを表示 */}
               {issue.src && title === '画像' && (
                 <div className="issue-image-preview">
@@ -976,46 +977,46 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                   />
                 </div>
               )}
-              
+
               <div className="issue-content">
                 <h5 className="issue-message">{issue.message}</h5>
                 {issue.element && (
                   <code className="issue-element">{issue.element}</code>
                 )}
-                
+
                 {/* 画像ファイルサイズ情報を表示 */}
                 {title === '画像' && issue.fileSizeMB && (
                   <div className="image-filesize-info">
                     <div className="issue-detail">
-                      <strong>ファイルサイズ:</strong> 
+                      <strong>ファイルサイズ:</strong>
                       <span className="filesize-mb">{issue.fileSizeMB.toFixed(2)} MB</span>
                       <span className="filesize-bytes">({issue.fileSize?.toLocaleString()} bytes)</span>
                     </div>
                   </div>
                 )}
-                
+
                 {/* リンク問題の場合は詳細情報を表示 */}
                 {title === 'リンク' && issue.href && (
                   <div className="link-issue-details">
                     <div className="issue-detail">
-                      <strong>リンク先:</strong> 
+                      <strong>リンク先:</strong>
                       <span className="link-url">{issue.href}</span>
                     </div>
-                    
+
                     {issue.linkText && (
                       <div className="issue-detail">
-                        <strong>リンクテキスト:</strong> 
+                        <strong>リンクテキスト:</strong>
                         <span className="link-text">"{issue.linkText}"</span>
                       </div>
                     )}
-                    
+
                     {issue.linkHtml && (
                       <div className="issue-detail">
                         <strong>HTML:</strong>
                         <code className="link-html">{issue.linkHtml}</code>
                       </div>
                     )}
-                    
+
                     <div className="issue-explanation">
                       <strong>問題の説明:</strong>
                       {issue.type === 'リンクテキストなし' && (
@@ -1027,7 +1028,7 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                     </div>
                   </div>
                 )}
-                
+
                 {issue.src && (
                   <div className="issue-detail">
                     <strong>ソース:</strong> {issue.src}
@@ -1068,17 +1069,36 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
               </div>
             </div>
             <div className="issues-grid">
-              {lighthouse.map((issue, index) => (
-                <div key={index} className="accessibility-card lighthouse">
-                  <div className="accessibility-header">
-                    <h5>{issue.title}</h5>
-                    <span className={`score-badge ${issue.score === 0 ? 'fail' : 'partial'}`}>
-                      {issue.score === 0 ? '失敗' : '部分的'}
-                    </span>
+              {lighthouse.map((issue, index) => {
+                const helpUrl = getLighthouseHelpUrl(issue.id || '');
+                const helpText = getLighthouseHelpText(issue.id || '', issue.description);
+                return (
+                  <div key={index} className="accessibility-card lighthouse">
+                    <div className="accessibility-header">
+                      <h5>{translateLighthouseTitle(issue.id || '', issue.title)}</h5>
+                      <span className={`score-badge ${issue.score === 0 ? 'fail' : 'partial'}`}>
+                        {issue.score === 0 ? '失敗' : '部分的'}
+                      </span>
+                    </div>
+                    <p className="accessibility-description">
+                      {translateLighthouseDescription(issue.id || '', issue.description)}
+                      {helpUrl && helpText && (
+                        <>
+                          {' '}
+                          <a
+                            href={helpUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="lighthouse-help-link"
+                          >
+                            {helpText}
+                          </a>
+                        </>
+                      )}
+                    </p>
                   </div>
-                  <p className="accessibility-description">{issue.description}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -1110,10 +1130,10 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                       </div>
                       <span className="affected-elements">{violation.nodes}箇所で検出</span>
                     </div>
-                    
+
                     <h5 className="violation-help">{translation?.help || violation.help}</h5>
                     <p className="violation-description">{translation?.description || 'Description not available'}</p>
-                    
+
                     {/* 該当箇所の詳細表示 */}
                     {violation.target && violation.target.length > 0 && (
                       <div className="target-info">
@@ -1132,8 +1152,8 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                                     <span className="search-hint-label">🔍 検索用キーワード:</span>
                                     <div className="search-keywords">
                                       {searchableInfo.map((hint, hintIndex) => (
-                                        <span 
-                                          key={hintIndex} 
+                                        <span
+                                          key={hintIndex}
                                           className="search-keyword"
                                           onClick={(e) => handleCopyKeyword(hint, e)}
                                           title={`クリックして "${hint}" をコピー`}
@@ -1150,31 +1170,31 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                         </div>
                       </div>
                     )}
-                    
+
                     {translation?.fixHint && (
                       <div className="fix-hint">
                         <strong>修正のヒント:</strong>
                         <span>{translation.fixHint}</span>
                       </div>
                     )}
-                    
+
 
                     {/* デバッグ情報 */}
                     {import.meta.env.DEV && (
-                      <div style={{ 
-                        marginTop: '10px', 
-                        padding: '8px', 
-                        background: '#f3f4f6', 
-                        borderRadius: '4px', 
+                      <div style={{
+                        marginTop: '10px',
+                        padding: '8px',
+                        background: '#f3f4f6',
+                        borderRadius: '4px',
                         fontSize: '12px',
-                        fontFamily: 'monospace' 
+                        fontFamily: 'monospace'
                       }}>
                         <strong>デバッグ情報:</strong><br/>
                         Target: {violation.target ? JSON.stringify(violation.target) : 'null'}<br/>
                         Nodes: {violation.nodes}
                       </div>
                     )}
-                    
+
                     {/* 影響を受ける要素の数を詳細表示 */}
                     {violation.nodes > 1 && (
                       <div className="multiple-elements-info">
@@ -1678,7 +1698,7 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                   </div>
                   {error.url && (
                     <div className="error-url">
-                      <strong>URL:</strong> 
+                      <strong>URL:</strong>
                       <span className="url-text">{error.url}</span>
                     </div>
                   )}
@@ -1753,30 +1773,30 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                       {issue.severity === 'info' && '情報'}
                     </span>
                   </div>
-                  
+
                   <div className="issue-content">
                     <h5>{issue.message}</h5>
-                    
+
                     {issue.element && (
                       <div className="issue-element">
                         <code>&lt;{issue.element}&gt;</code>
                       </div>
                     )}
-                    
+
                     {issue.className && (
                       <div className="issue-class">
                         <strong>問題箇所のクラス名:</strong>
                         <code className="class-name">{issue.className}</code>
                       </div>
                     )}
-                    
+
                     {issue.suggestion && (
                       <div className="issue-suggestion">
                         <strong>改善案:</strong>
                         <p>{issue.suggestion}</p>
                       </div>
                     )}
-                    
+
                     <button
                       className="detail-button-modern"
                       onClick={() => setSelectedIssue(issue)}
@@ -1856,14 +1876,33 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
       <Modal
         isOpen={!!selectedIssue}
         onClose={() => setSelectedIssue(null)}
-        title={isLighthouse ? (selectedIssue.title || '詳細') : isWCAG ? (selectedIssue.help || '詳細') : (selectedIssue.message || '詳細')}
+        title={isLighthouse ? (selectedIssue.id ? translateLighthouseTitle(selectedIssue.id, selectedIssue.title || '詳細') : (selectedIssue.title || '詳細')) : isWCAG ? (selectedIssue.help || '詳細') : (selectedIssue.message || '詳細')}
       >
         <div className="modal-content-modern">
           {isLighthouse && (
             <>
               <div className="modal-section">
                 <strong>説明:</strong>
-                <p>{selectedIssue.description}</p>
+                <p>
+                  {selectedIssue.id ? translateLighthouseDescription(selectedIssue.id, selectedIssue.description || '') : selectedIssue.description}
+                  {selectedIssue.id && (() => {
+                    const helpUrl = getLighthouseHelpUrl(selectedIssue.id);
+                    const helpText = getLighthouseHelpText(selectedIssue.id, selectedIssue.description);
+                    return helpUrl && helpText ? (
+                      <>
+                        {' '}
+                        <a
+                          href={helpUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="lighthouse-help-link"
+                        >
+                          {helpText}
+                        </a>
+                      </>
+                    ) : null;
+                  })()}
+                </p>
               </div>
               {selectedIssue.displayValue && (
                 <div className="modal-section">
@@ -1886,31 +1925,31 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                 <strong>問題の説明:</strong>
                 <p>{selectedIssue.translation?.description || selectedIssue.description || 'No description available'}</p>
               </div>
-              
+
               {selectedIssue.translation?.fixHint && (
                 <div className="modal-section fix-hint-section">
                   <strong>💡 修正のヒント:</strong>
                   <p>{selectedIssue.translation?.fixHint}</p>
                 </div>
               )}
-              
+
               <div className="modal-section">
                 <strong>影響レベル:</strong>
                 <span className={`impact-badge impact-${selectedIssue.impact}`}>
                   {translateImpact(selectedIssue.impact || 'minor')}
                 </span>
               </div>
-              
+
               <div className="modal-section">
                 <strong>影響要素数:</strong>
                 <span className="affected-count">{selectedIssue.nodes}箇所</span>
               </div>
-              
+
               <div className="modal-section">
                 <strong>ルールID:</strong>
                 <code className="rule-id">{selectedIssue.id}</code>
               </div>
-              
+
               <div className="modal-section">
                 <strong>関連ガイドライン:</strong>
                 <div className="tags-list-modern">
@@ -1921,7 +1960,7 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                   )) || []}
                 </div>
               </div>
-              
+
               {/* 要素のハイライト機能をモーダル内でも提供 */}
               {selectedIssue.target && (
                 <div className="modal-actions">
@@ -1939,7 +1978,7 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
                   </button>
                 </div>
               )}
-              
+
               {selectedIssue.helpUrl && (
                 <a
                   href={selectedIssue.helpUrl}
