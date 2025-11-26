@@ -1,11 +1,11 @@
 import lighthouse from 'lighthouse';
 import AxePuppeteer from '@axe-core/puppeteer';
-import * as cheerio from 'cheerio';
 import { resolveAbsoluteUrl } from '../utils/url-utils.js';
 import { GeminiService } from './ai/geminiService.js';
 import { getGeminiConfig, isGeminiConfigValid } from '../config/gemini.js';
 import { launchBrowserWithRetry, setupAuth } from './browser/launch.js';
 import { collectConsoleErrors, collectSiteLinks } from './pipeline/analyzers/browserAnalyzer.js';
+import { analyzeDom as analyzeDomPipeline } from './pipeline/analyzers/domAnalyzer.js';
 
 /* global document, window */
 
@@ -51,10 +51,10 @@ export async function checkSinglePage(url, auth = null) {
     });
 
     // 並列実行で診断を高速化
-    const [lighthouseResults, axeResults, domAnalysis, consoleErrors] = await Promise.all([
+    const [lighthouseResults, axeResults, domAnalysisRaw, consoleErrors] = await Promise.all([
       runLighthouse(url, auth, browser),
       runAxeCore(page),
-      analyzeDom(page),
+      analyzeDomPipeline(page),
       collectConsoleErrors(page),
     ]);
 
@@ -97,14 +97,11 @@ export async function checkSinglePage(url, auth = null) {
       url,
       timestamp: new Date().toISOString(),
       scores: lighthouseResults.scores,
-      issues: {
-        ...domAnalysis,
-        accessibility: {
-          lighthouse: lighthouseResults.accessibility,
-          axe: axeResults,
-        },
+      issues: buildLegacyIssuesFromDom(domAnalysisRaw, {
+        lighthouseAccessibility: lighthouseResults.accessibility,
+        axe: axeResults,
         consoleErrors,
-      },
+      }),
       siteLinks, // 他ページへのリンク一覧を追加
       semanticAnalysis, // Gemini AI分析結果を追加
       auth, // 認証情報を結果に含める
@@ -112,6 +109,32 @@ export async function checkSinglePage(url, auth = null) {
   } finally {
     await browser.close();
   }
+}
+
+/**
+ * パイプライン型DOM解析結果を旧issues形式にマッピング
+ * @param {Object} domResult
+ * @param {Object} extras
+ * @param {Array} extras.lighthouseAccessibility
+ * @param {Array} extras.axe
+ * @param {Array} extras.consoleErrors
+ */
+function buildLegacyIssuesFromDom(domResult, extras) {
+  return {
+    headings: domResult?.headingIssues ?? [],
+    headingsStructure: domResult?.headingStructure ?? [],
+    images: domResult?.imageIssues ?? [],
+    allImages: domResult?.imageDetails ?? [],
+    links: domResult?.linkIssues ?? [],
+    meta: domResult?.metaIssues ?? [],
+    allMeta: domResult?.metaDetails ?? [],
+    htmlStructure: domResult?.htmlStructureIssues ?? [],
+    accessibility: {
+      lighthouse: extras.lighthouseAccessibility ?? [],
+      axe: extras.axe ?? [],
+    },
+    consoleErrors: extras.consoleErrors ?? [],
+  };
 }
 
 /**
@@ -365,140 +388,7 @@ async function runAxeCore(page) {
   }
 }
 
-/**
- * DOM解析による各種問題検出
- * @param {Object} page - Puppeteer page instance
- * @returns {Object} DOM解析結果
- */
-async function analyzeDom(page) {
-  const content = await page.content();
-  const $ = cheerio.load(content);
-
-  return {
-    headings: analyzeHeadings($),
-    headingsStructure: getAllHeadings($), // 新しい項目を追加
-    images: await analyzeImages($),
-    allImages: await getAllImages($, page), // 全ての画像情報を追加（位置情報取得のためページインスタンスを渡す）
-    links: analyzeLinks($),
-    meta: analyzeMeta($),
-    allMeta: getAllMeta($), // 全てのメタ情報を追加
-    htmlStructure: analyzeHtmlStructure(content), // HTML構造チェックを追加
-  };
-}
-
-/**
- * 全ての見出しを階層構造で取得
- * @param {Object} $ - Cheerio instance
- * @returns {Array} 全見出し一覧（階層情報付き）
- */
-function getAllHeadings($) {
-  const headings = $('h1, h2, h3, h4, h5, h6').get();
-
-  return headings.map((heading, index) => {
-    const level = parseInt(heading.tagName.charAt(1));
-    const $heading = $(heading);
-    let text = $heading.text().trim();
-    const images = [];
-
-    // 見出し内の画像情報を詳細取得
-    $heading.find('img').each((_, img) => {
-      const $img = $(img);
-      const alt = $img.attr('alt') || '';
-      const title = $img.attr('title') || '';
-      const src = $img.attr('src');
-      const width = $img.attr('width');
-      const height = $img.attr('height');
-
-      // 相対URLを絶対URLに変換
-      const absoluteSrc = resolveAbsoluteUrl(src, global.currentUrl);
-
-      images.push({
-        src: absoluteSrc,
-        alt,
-        title,
-        width: width ? parseInt(width) : null,
-        height: height ? parseInt(height) : null,
-        filename: src ? src.split('/').pop().split('.')[0] : '',
-      });
-    });
-
-    // テキストが空で画像がある場合、画像情報を含める
-    if (!text && images.length > 0) {
-      const imageTexts = images.map((img) => img.alt || img.title || img.filename || '無題画像');
-      text = imageTexts.join(', ');
-    }
-
-    return {
-      level,
-      tag: heading.tagName.toLowerCase(),
-      text: text || '',
-      index,
-      images,
-      hasImage: images.length > 0,
-      isEmpty: !text && images.length === 0,
-    };
-  });
-}
-
-/**
- * 見出し階層の解析
- * @param {Object} $ - Cheerio instance
- * @returns {Array} 見出し問題一覧
- */
-function analyzeHeadings($) {
-  const issues = [];
-  const headings = $('h1, h2, h3, h4, h5, h6').get();
-
-  let previousLevel = 0;
-
-  headings.forEach((heading, index) => {
-    const level = parseInt(heading.tagName.charAt(1));
-    const $heading = $(heading);
-    const text = $heading.text().trim();
-    const hasImages = $heading.find('img').length > 0;
-
-    // 空の見出し（画像がある場合は問題なし）
-    if (!text && !hasImages) {
-      issues.push({
-        type: '空の見出し',
-        element: heading.tagName,
-        message: '見出しが空です',
-        severity: 'error',
-      });
-    }
-
-    // 見出しレベルのスキップ
-    if (index > 0 && level > previousLevel + 1) {
-      issues.push({
-        type: '見出しレベルスキップ',
-        element: heading.tagName,
-        message: `見出しレベルがh${previousLevel}からh${level}にスキップしています`,
-        severity: 'warning',
-      });
-    }
-
-    previousLevel = level;
-  });
-
-  // h1の数チェック
-  const h1Count = $('h1').length;
-  if (h1Count === 0) {
-    issues.push({
-      type: 'h1なし',
-      message: 'h1見出しが見つかりません',
-      severity: 'error',
-    });
-  } else if (h1Count > 1) {
-    issues.push({
-      type: '複数h1',
-      message: `h1見出しが複数あります（${h1Count}個）`,
-      severity: 'warning',
-    });
-  }
-
-  return issues;
-}
-
+/* eslint-disable no-unused-vars */
 /**
  * 全ての画像情報を取得（位置情報、WebP代替画像、遅延読み込み状況を含む）
  * @param {Object} $ - Cheerio instance
@@ -1042,6 +932,7 @@ function getAllMeta($) {
 
   return metaInfo;
 }
+
 
 /**
  * ページ数をカウント（実際のクロールなし）
@@ -1592,5 +1483,7 @@ function extractClassName(htmlContent, position) {
   const classMatch = surroundingText.match(/class\s*=\s*["']([^"']+)["']/i);
   return classMatch ? classMatch[1] : null;
 }
+
+/* eslint-enable no-unused-vars */
 
 export { countPages };
