@@ -1055,54 +1055,10 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
   };
 
   const renderAccessibilityIssues = () => {
-    const { lighthouse, axe } = issues.accessibility;
+    const { axe } = issues.accessibility;
 
     return (
       <div className="accessibility-content-modern">
-        {lighthouse.length > 0 && (
-          <div className="accessibility-section">
-            <div className="section-header">
-              <div className="section-title">
-                <div className="lighthouse-icon">🏮</div>
-                <h4>Lighthouse アクセシビリティ</h4>
-                <span className="count-badge warning">{lighthouse.length}</span>
-              </div>
-            </div>
-            <div className="issues-grid">
-              {lighthouse.map((issue, index) => {
-                const helpUrl = getLighthouseHelpUrl(issue.id || '');
-                const helpText = getLighthouseHelpText(issue.id || '', issue.description);
-                return (
-                  <div key={index} className="accessibility-card lighthouse">
-                    <div className="accessibility-header">
-                      <h5>{translateLighthouseTitle(issue.id || '', issue.title)}</h5>
-                      <span className={`score-badge ${issue.score === 0 ? 'fail' : 'partial'}`}>
-                        {issue.score === 0 ? '失敗' : '部分的'}
-                      </span>
-                    </div>
-                    <p className="accessibility-description">
-                      {translateLighthouseDescription(issue.id || '', issue.description)}
-                      {helpUrl && helpText && (
-                        <>
-                          {' '}
-                          <a
-                            href={helpUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="lighthouse-help-link"
-                          >
-                            {helpText}
-                          </a>
-                        </>
-                      )}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {axe.length > 0 && (
           <div className="accessibility-section">
             <div className="section-header">
@@ -1209,7 +1165,7 @@ export const TabContent: React.FC<TabContentProps> = React.memo(({
           </div>
         )}
 
-        {lighthouse.length === 0 && axe.length === 0 && (
+        {axe.length === 0 && (
           <div className="no-issues">
             <div className="accessibility-checklist">
               <div className="success-icon">🎉</div>
